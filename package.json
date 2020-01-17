@@ -21,8 +21,11 @@
     "chai-as-promised": "^7.1.1",
     "mocha": "^7.0.0",
     "nyc": "^15.0.0",
+    "prettier": "^1.19.1",
     "source-map-support": "^0.5.16",
     "ts-node": "^8.1.0",
+    "tslint": "^5.20.1",
+    "tslint-config-prettier": "^1.18.0",
     "typescript": "~3.7.2"
   },
   "dependencies": {
@@ -54,5 +57,10 @@
       "text-summary"
     ],
     "all": true
+  },
+  "prettier": {
+    "printWidth": 80,
+    "tabWidth": 2,
+    "singleQuote": true
   }
 }
