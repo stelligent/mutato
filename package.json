@@ -8,7 +8,8 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "nyc mocha test/**/*.test.ts",
-    "cdk": "cdk"
+    "lint:check": "prettier --check {lib,bin,test}/**/*.ts",
+    "lint:write": "prettier --check --write {lib,bin,test}/**/*.ts"
   },
   "devDependencies": {
     "@aws-cdk/assert": "^1.21.1",
