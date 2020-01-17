@@ -7,21 +7,52 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "test": "jest",
+    "test": "nyc mocha test/**/*.test.ts",
     "cdk": "cdk"
   },
   "devDependencies": {
     "@aws-cdk/assert": "^1.21.1",
-    "@types/jest": "^24.0.22",
+    "@types/chai": "^4.2.7",
+    "@types/chai-as-promised": "^7.1.2",
+    "@types/mocha": "^5.2.7",
     "@types/node": "10.17.5",
-    "jest": "^24.9.0",
-    "ts-jest": "^24.1.0",
     "aws-cdk": "^1.21.1",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "mocha": "^7.0.0",
+    "nyc": "^15.0.0",
+    "source-map-support": "^0.5.16",
     "ts-node": "^8.1.0",
     "typescript": "~3.7.2"
   },
   "dependencies": {
-    "@aws-cdk/core": "^1.21.1",
-    "source-map-support": "^0.5.16"
+    "@aws-cdk/core": "^1.21.1"
+  },
+  "mocha": {
+    "bail": true,
+    "fullTrace": true,
+    "recursive": true,
+    "inlineDiffs": true,
+    "require": [
+      "ts-node/register",
+      "source-map-support/register"
+    ]
+  },
+  "nyc": {
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "exclude": [
+      "**/*.d.ts",
+      "coverage",
+      "test",
+      "bin"
+    ],
+    "reporter": [
+      "html",
+      "text-summary"
+    ],
+    "all": true
   }
 }

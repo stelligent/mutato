@@ -2,7 +2,8 @@ import { expect as expectCDK, matchTemplate, MatchStyle } from '@aws-cdk/assert'
 import * as cdk from '@aws-cdk/core';
 import Mu = require('../lib/mu-stack');
 
-test('Empty Stack', () => {
+describe('Empty Stack', () => {
+  it('should have no resources', () => {
     const app = new cdk.App();
     // WHEN
     const stack = new Mu.MuStack(app, 'MyTestStack');
@@ -10,4 +11,5 @@ test('Empty Stack', () => {
     expectCDK(stack).to(matchTemplate({
       "Resources": {}
     }, MatchStyle.EXACT))
+  })
 });
