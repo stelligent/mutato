@@ -1,5 +1,5 @@
 {
-    "name": "Node.js Sample",
+    "name": "mu",
     "dockerFile": "Dockerfile",
 
     // Use 'appPort' to create a container with published ports. If the port isn't working, be sure
