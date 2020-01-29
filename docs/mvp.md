@@ -46,11 +46,11 @@ of Mutato. Finally, section 4 defines a rough YAML schema consumed by Mutato.
 
 ### 1.4 Reference Material
 
-- Mu1 (the original Mu project): https://github.com/stelligent/mu
+- Mu1 (the original Mu project): <https://github.com/stelligent/mu>
 - Mu1 examples and sample YAML files:
-  https://github.com/stelligent/mu/tree/develop/examples
+  <https://github.com/stelligent/mu/tree/develop/examples>
 - AWS CDK and ecs-patterns module:
-  https://docs.aws.amazon.com/cdk/api/latest/docs/aws-ecs-patterns-readme.html
+  <https://docs.aws.amazon.com/cdk/api/latest/docs/aws-ecs-patterns-readme.html>
 
 ### 1.5 Definitions and Acronyms
 
