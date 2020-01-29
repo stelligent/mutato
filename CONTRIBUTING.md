@@ -11,7 +11,7 @@ Help wanted!  We'd love your contributions to Mutato.  Please review the followi
 
 Please don't open a GitHub issue for questions about how to use mutato, as the goal is to use issues for managing bugs and feature requests.  Issues that are related to general support will be closed and redirected to our gitter room.
 
-For all support related questions, please ask the question in our gitter room: [stelligent/mutato](https://gitter.im/stelligent/mutato).
+For all support related questions, please ask the question in our gitter room: [stelligent/mutato](https://gitter.im/stelligent/mu).
 
 ## <a name="bugs"></a> Found a Bug?
 
