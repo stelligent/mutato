@@ -157,7 +157,7 @@ working and deployed.
 1. `database`: can have different engine types, focus on serverless
 1. `storage`: can be either S3 or EFS mounted inside containers
 1. `cache`: can be either Memcached or ElastiCache, or CloudFront
-1. `queue`: can be a Dockerfile triggered by SQQ task items
+1. `queue`: can be a Dockerfile triggered by SQS task items
 1. `task`: can be a Dockerfile triggered by CloudWatch
 1. `cluster`: to customize the ECS service's cluster
 1. `network`: to customize the VPC params
