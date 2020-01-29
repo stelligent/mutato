@@ -13,7 +13,6 @@
     - [3.2 Program Architecture](#32-program-architecture)
     - [3.3 YAML preprocessing](#33-yaml-preprocessing)
     - [3.4 MVP constructs](#34-mvp-constructs)
-    - [3.5 Escape Hatch](#35-escape-hatch)
   - [4. YAML Schema](#4-yaml-schema)
 
 ## 1. Introduction
@@ -123,35 +122,24 @@ interface IBaseConstruct extends CDK.Construct {
 
 ### 3.3 YAML preprocessing
 
+YAML ingested by Mu2 is a [Nunjucks](https://mozilla.github.io/nunjucks/) file.
+Naturally all features of Nunjucks are supported such as includes, blocks, loops
+and dynamic function calls (Nunjucks filters).
+
 The YAML is pre-processed before construct initialization. A version string must
 indicate the version of Mu2 the YAML targets. The YAML file can contain the
-following dynamic variables:
+following dynamic Nunjucks variables:
 
-- environment strings: `${VAR}` which resolves to the environment variable
-- the pointer strings: `${construct:property}`. During initialization, resolves
-  to a property of another construct. Pointer strings always contain a colon
-- SSM parameters: `${ssm:property}`. String parameters resolved through SSM.
+- environment strings: `{{ env(VAR) }}` resolves to the environment variable
+- SSM parameters: `{{ ssm(property) }}`. String parameters resolved through SSM.
   StringList parameters are divided by their comma and turned into a javascript
   string array.
+- AWS Secrets Manager parameters: `{{ asm(property) }}`. Parameters resolved by
+  a lookup in AWS Secrets Manager.
+- Shell command output: `{{ cmd(script) }}`. Parameter resolved by execution of
+  a shell script on the machine executing Mu2.
 
-Dynamic variable resolution has an order and it's a direct string replacement
-just like C preprocessor `#define`s:
-
-1. Look for a `${<variable>}` string and extract `<variable>`
-2. Look for a colon character in `<variable>`
-3. If no colon is found, the entire `<variable>` is resolved in the environment
-4. If a colon is found, divide `<variable>` into `<name:path>`
-5. If `name` is `"ssm"`, resolve the parameter through SSM
-6. otherwise `name` refers to a construct in the YAML file and `path` refers to
-   a JSON path (look at <https://lodash.com/docs/#get>)
-
-The CLI goes through the YAML file, creates a CDK stack and initializes all the
-constructs one by one. During the initialization process, a dependency graph is
-created between constructs (<https://www.npmjs.com/package/dependency-graph>).
-Existence of a pointer string in the YAML file constitutes a dependency.
-
-Constructs in the dependency graph are initialized from bottom to top. Top level
-is always the CDK stack created by Mu. Cyclic dependencies are considered fatal.
+`env`, `ssm`, `cmd`, and `asm` are custom Nunjucks filters provided by Mu2.
 
 MVP does not concern itself with AWS authentication and multi-account deploys.
 MVP simply invokes the CDK CLI and allows CDK to handle authentication.
@@ -194,21 +182,6 @@ MVP constructs are divided in three categories:
    and operational constructs to run. They include resources like a VPC and an
    ECS cluster. These constructs are currently `cluster`, `network`, and `cicd`
 
-### 3.5 Escape Hatch
-
-Mu2 provides a one-time escape hatch mechanism just like CDK itself. This Escape
-hatch is a JavaScript file that implements the following interface:
-
-```TS
-interface IEscapeHatch extends CDK.IAspect {
-  public abstract async process(stack:CDK.Construct): Promise<CDK.Construct>;
-}
-```
-
-The interface is optional and will be triggered after Mu2 is finished generating
-the app's entire pipeline. This is to provide one last opportunity to customize
-the pipeline.
-
 ## 4. YAML Schema
 
 ```YAML
@@ -228,30 +201,17 @@ mu:
     env:
       - foo: bar
       # this is pre-processed to "DOO" env var
-      - doo: ${DOO}
-      # this creates a dependency between "app" and "customInstance". this will
-      # cause "customInstance" to be created first
-      - var: ${customInstance:instanceId}
+      - doo: {{ env("DOO") }}
 
   db:
     type: database
     provider: serverless-aurora
     engine: mysql
-    username: ${DB_USER}
-    password: ${DB_PASS}
+    username: {{ env("DB_USER") }}
+    password: {{ ssm("/path/to/pass") }}
 
   data:
     type: storage
     provider: s3
-    bucket: ${BUCKET_NAME}
-
-  # example of a custom resource
-  # https://docs.aws.amazon.com/cdk/api/latest/docs/@aws-cdk_aws-ec2.Instance.html
-  customInstance:
-    type: @aws-cdk/aws-ec2/Instance
-    instanceType: t2-micro
-    machineImage: 'whatever-ami'
-    # "network" is a construct of type "infra". it's automatically created and
-    # can be customized by providing a "network:" key in this YAML file.
-    vpc: ${network:vpc}
+    bucket: {{ env("BUCKET_NAME") }}
 ```
