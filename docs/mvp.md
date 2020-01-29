@@ -167,7 +167,7 @@ working and deployed.
 MVP constructs are divided in three categories:
 
 1. **operational**: `service`, `queue`, and `task`. All operational constructs
-   involve a Dockerfile an somehow running it.
+   involve a Dockerfile and somehow running it.
 1. **utility**: `database`, `cache`, and `storage`. These constructs are
    magically linked to operational constructs, meaning that if user creates a
    `database` construct, it's automatically available to `service`, `task`, and
