@@ -89,26 +89,8 @@ the MVP only Github remotes are supported.
 ### 3.2 Program Architecture
 
 Mu2/CDK constructs can be referenced in the `mu.yml` file. Constructs referenced
-in the YAML file can be either in the form of a simple string or the following
-format: `<package/path>/<construct name>`.
-
-If the string version is given (no slashes in the name), the construct refers to
-an internal Mu2 CDK construct under `lib/` (e.g `service` or `database`).
-
-If the package format is given, Mu2 looks under context folder's `node_modules`
-directory for the installed package and imports the construct that way. This is
-how Mu2 can be extended. Extensibility is only possible in NodeJS for MVP. An
-example would be `@aws-cdk/aws-ecs-patterns/ApplicationLoadBalancedEc2Service`.
-The example breaks down to package: `@aws-cdk/aws-ecs-patterns` and named type
-of `ApplicationLoadBalancedEc2Service`. Another example would be a local module:
-`./my-app-constructs/index.js/MyCustomConstruct`. In this example, package is
-`./my-app-constructs/index.js` and named type is `MyCustomConstruct`. Package
-format resolution is as follows (in order):
-
-1. Mu2 looks for the package under `node_modules`
-1. If found, tries to import the type. If fails, proceed to the next step
-1. Mu2 looks for a local folder in the context directory
-1. If found, tries to import the type. If fails, this is fatal
+in the YAML file refer to internal Mu2 CDK construct under `lib/` (e.g `service`
+or `database`).
 
 Every single construct under `lib/` shares a base construct. This base construct
 must allow for `async()` construction of all constructs. An example interface in
