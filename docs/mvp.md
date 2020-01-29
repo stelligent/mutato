@@ -130,10 +130,24 @@ following dynamic variables:
 - environment strings: `${VAR}` which resolves to the environment variable
 - the pointer strings: `${construct:property}`. During initialization, resolves
   to a property of another construct. Pointer strings always contain a colon
+- SSM parameters: `${ssm:property}`. String parameters resolved through SSM.
+  StringList parameters are divided by their comma and turned into a javascript
+  string array.
+
+Dynamic variable resolution has an order and it's a direct string replacement
+just like C preprocessor `#define`s:
+
+1. Look for a `${<variable>}` string and extract `<variable>`
+2. Look for a colon character in `<variable>`
+3. If no colon is found, the entire `<variable>` is resolved in the environment
+4. If a colon is found, divide `<variable>` into `<name:path>`
+5. If `name` is `"ssm"`, resolve the parameter through SSM
+6. otherwise `name` refers to a construct in the YAML file and `path` refers to
+   a JSON path (look at <https://lodash.com/docs/#get>)
 
 The CLI goes through the YAML file, creates a CDK stack and initializes all the
 constructs one by one. During the initialization process, a dependency graph is
-created between constructs (see https://www.npmjs.com/package/dependency-graph).
+created between constructs (<https://www.npmjs.com/package/dependency-graph>).
 Existence of a pointer string in the YAML file constitutes a dependency.
 
 Constructs in the dependency graph are initialized from bottom to top. Top level
