@@ -180,12 +180,13 @@ MVP constructs are divided in three categories:
    construct.
 1. **infra**: infrastructure level constructs. These are necessary for utility
    and operational constructs to run. They include resources like a VPC and an
-   ECS cluster. These constructs are currently `cluster`, `network`, and `cicd`
+   ECS cluster. These constructs are currently `cluster`, `network`, and `cicd`.
 
 ## 4. YAML Schema
 
 ```YAML
 # this can be omitted, and if omitted, the current version of the CLI is assumed
+# a warning is presented to the user if version tag is missing.
 version: 2.0
 
 # this is static, top level stack key
