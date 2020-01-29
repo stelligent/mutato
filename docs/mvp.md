@@ -139,14 +139,13 @@ working and deployed.
 
 1. `service`: can be a Dockerfile running either on ECS-EC2 or Fargate
 1. `database`: can have different engine types, focus on serverless
-1. `storage`: can be either S3 or EFS mounted inside containers
+1. `storage`: can be either S3, ECR, DockerHub or EFS mounted inside containers
 1. `cache`: can be either Memcached or ElastiCache, or CloudFront
 1. `queue`: can be a Dockerfile triggered by SQS task items
 1. `task`: can be a Dockerfile triggered by CloudWatch
 1. `cluster`: to customize the ECS service's cluster
 1. `network`: to customize the VPC params
 1. `cicd`: can be either CodePipeline or Drone CI
-1. `ecr`: the ECR repository where operational Dockerfiles are stored at
 
 MVP constructs are divided in three categories:
 
