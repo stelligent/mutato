@@ -10,8 +10,8 @@
   - [2. Project Overview](#2-project-overview)
   - [3. Project Architecture](#3-project-architecture)
     - [3.1 Directory Layout](#31-directory-layout)
-    - [3.2 Program Architecture](#32-program-architecture)
-    - [3.3 YAML preprocessing](#33-yaml-preprocessing)
+    - [3.2 YAML preprocessing](#32-yaml-preprocessing)
+    - [3.3 Single Shared Base Construct](#33-single-shared-base-construct)
     - [3.4 MVP constructs](#34-mvp-constructs)
     - [3.5 Integration With External CIs](#35-integration-with-external-cis)
     - [3.6 Authentication and Multi-Environment Deploys](#36-authentication-and-multi-environment-deploys)
@@ -39,6 +39,10 @@ In other words:
 
 > The Serverless Framework but for Dockerized apps
 
+Mu2 is heavily opinionated about the way things work and leaves small room for
+extensibility. If a user is advanced enough to demand customization in their
+workflow, they can consume Mu2 in its library form.
+
 ### 1.3 Overview
 
 This document gives a general description of the functionality, context and
@@ -57,7 +61,8 @@ of Mutato. Finally, section 4 defines a rough YAML schema consumed by Mutato.
 ### 1.5 Definitions and Acronyms
 
 Throughout this document Mu, Mutato, and Mu2 are interchangeable and they all
-refer to this repository's project.
+refer to this repository's project. Whenever the original Mu is referenced, it
+is explicitly mentioned as Mu1.
 
 ## 2. Project Overview
 
@@ -67,18 +72,17 @@ have access to various databases, stay behind a load balancer, be served through
 CloudFront or anything else that can be related to an ECS app.
 
 The point of entry to Mu2 is a YAML file, named `mu.yml` by default. Mu2 in its
-CLI form can be invoked by passing this YAML file in and a context directory.
-Context directory is set to `$CWD` of where Mu2 CLI is being invoked.
+CLI form can be invoked by passing this YAML file in. Just like GNU `make`, Mu2
+assumes the current directory as its context directory.
 
 Mu2 in its library form is a collection of useful CDK constructs that power Mu2
 itself. The constructs can be used in any other CDK app. CLI's point of entry is
 also provided as a consumable library function and returns a CDK stack.
 
 Mu2 spins up a CI/CD Pipeline that manages the Dockerized application's DevOps
-life-cycle from build to testing to deploy. A lot like Heroku pipelines.
-
-Mu2 uses the current directory's GIT remote as CodePipeline's source input. For
-the MVP only Github remotes are supported.
+life-cycle from build to testing to deploy. Mu2 uses the current directory's GIT
+remote as CodePipeline's source input. For the MVP only Github remotes are
+supported.
 
 ## 3. Project Architecture
 
@@ -89,23 +93,7 @@ the MVP only Github remotes are supported.
 - `docs/`: where relevant docs and design references are at
 - `tests/`: is where Mu2 unit tests are at
 
-### 3.2 Program Architecture
-
-Mu2/CDK constructs can be referenced in the `mu.yml` file. Constructs referenced
-in the YAML file refer to internal Mu2 CDK construct under `lib/` (e.g `service`
-or `database`).
-
-Every single construct under `lib/` shares a base construct. This base construct
-must allow for `async()` construction of all constructs. An example interface in
-this model would be:
-
-```JS
-interface IBaseConstruct extends CDK.Construct {
-  public abstract async synth(): Promise<void>;
-}
-```
-
-### 3.3 YAML preprocessing
+### 3.2 YAML preprocessing
 
 YAML ingested by Mu2 is a [Nunjucks](https://mozilla.github.io/nunjucks/) file.
 Naturally all features of Nunjucks are supported such as includes, blocks, loops
@@ -127,6 +115,22 @@ The YAML file can contain the following dynamic Nunjucks filters:
   a shell script on the machine executing Mu2.
 
 `env`, `ssm`, `cmd`, and `asm` are custom Nunjucks filters provided by Mu2.
+
+### 3.3 Single Shared Base Construct
+
+Every single construct under `lib/` shares a base construct. This base construct
+must allow for `async()` construction of all constructs. An example interface in
+this model would be:
+
+```JS
+interface IBaseConstruct extends CDK.Construct {
+  public abstract async synth(): Promise<void>;
+}
+```
+
+Async construction allows async actions to be done during `mu.yml` synthesis.
+Example of async actions is looking up an AMI id or resolving latest version of
+the AWS C++ CDK from Github.
 
 ### 3.4 MVP constructs
 
