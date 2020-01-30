@@ -14,6 +14,8 @@
     - [3.3 YAML preprocessing](#33-yaml-preprocessing)
     - [3.4 MVP constructs](#34-mvp-constructs)
     - [3.5 Integration With External CIs](#35-integration-with-external-cis)
+    - [3.6 Authentication and Multi-Environment Deploys](#36-authentication-and-multi-environment-deploys)
+    - [3.7 Self-Healing and Self-Updating](#37-self-healing-and-self-updating)
   - [4. YAML Schema](#4-yaml-schema)
 
 ## 1. Introduction
@@ -109,9 +111,11 @@ YAML ingested by Mu2 is a [Nunjucks](https://mozilla.github.io/nunjucks/) file.
 Naturally all features of Nunjucks are supported such as includes, blocks, loops
 and dynamic function calls (Nunjucks filters).
 
-The YAML is pre-processed before construct initialization. A version string must
-indicate the version of Mu2 the YAML targets. The YAML file can contain the
-following dynamic Nunjucks variables:
+A version string must indicate the version of Mu2 the YAML targets. If version
+is missing from the file, latest version is assumed and user should be warned
+about it and encouraged to include a version string.
+
+The YAML file can contain the following dynamic Nunjucks filters:
 
 - environment strings: `{{ env(VAR) }}` resolves to the environment variable
 - SSM parameters: `{{ ssm(property) }}`. String parameters resolved through SSM.
@@ -123,18 +127,6 @@ following dynamic Nunjucks variables:
   a shell script on the machine executing Mu2.
 
 `env`, `ssm`, `cmd`, and `asm` are custom Nunjucks filters provided by Mu2.
-
-MVP does not concern itself with AWS authentication and multi-account deploys.
-MVP simply invokes the CDK CLI and allows CDK to handle authentication.
-
-Mu2 wraps the application's stack in a CI/CD pipeline that builds application's
-Dockerfile, puts it through unit tests, and finally deploys to an ECS cluster.
-
-The actual CI/CD pipeline is read from either a `buildspec.yml` file (in case of
-CodePipeline) or `.drone.yml` (in case of Drone CI). Mu2 injects its own steps
-inside the given pipeline. If none of these files are provided, Mu2 generates a
-sample one for the user which is just functional enough to get the application
-working and deployed.
 
 ### 3.4 MVP constructs
 
@@ -204,37 +196,76 @@ Jenkins [construct in CDK](https://docs.aws.amazon.com/cdk/api/latest/docs/@aws-
 Drone CI provides [programmatic triggers](https://github.com/drone/drone/issues/2679)
 but requires more manual labor to integrate compared to Jenkins.
 
+### 3.6 Authentication and Multi-Environment Deploys
+
+MVP does not concern itself with authentication and multi-environment deploys.
+MVP simply invokes the CDK CLI and allows CDK to handle authentication.
+
+Mu2 creates a CI/CD pipeline that builds application's Dockerfile, puts it
+through unit tests (through external CI), and finally deploys to an ECS cluster.
+
+### 3.7 Self-Healing and Self-Updating
+
+MVP provides a _self-healing_ CodePipeline. That means changes to the underlying
+`mu.yml` file causes an update to its CodePipeline automatically. Mu2's pipeline
+is implemented using CDK app-delivery module that enables it to self-heal.
+
 ## 4. YAML Schema
 
+Top level node in the YAML file is always `mu`. under that, the following format
+is acceptable as constructs:
+
 ```YAML
-# this can be omitted, and if omitted, the current version of the CLI is assumed
-# a warning is presented to the user if version tag is missing.
+# shorthand version
+<type>:
+  prop1: val1
+  prop2: val2
+  prop3: ...
+
+# explicit version
+<name>:
+  type: <type>
+  prop1: val1
+  prop2: val2
+  prop3: ...
+```
+
+Combination of `<name>` and `<type>` is unique across the YAML file. Shorthand
+version is provided since `infra` constructs can only appear exactly once and it
+is confusing to write them as name/type (as it indicates it can be more than one
+and having a name is unnecessary in that case). In the shorthand version, type
+is inferred from the name directly. Lack of a _type_ prop indicates a shorthand
+version of a construct.
+
+Here is a sample `mu.yml`:
+
+```YAML
 version: 2.0
 
-# this is static, top level stack key
 mu:
-  # name of the construct (used as ID when passed to CDK.Construct)
-  app:
-    # type of the construct (used as right hand side of new() upon construction)
+  app1:
     type: service
-    # anything else other than "type" is serialized into an object and passed as
-    # the third parameter to the CDK.Construct
     provider: fargate
     port: 8000
     env:
-      - foo: bar
-      # this is pre-processed to "DOO" env var
-      - doo: {{ env("DOO") }}
+      - doo: {{ env("FOO") }}
 
-  db:
-    type: database
+  app2:
+    type: service
+    provider: fargate
+    port: 9000
+    env:
+      - doo: {{ env("BAR") }}
+
+  database:
     provider: serverless-aurora
     engine: mysql
     username: {{ env("DB_USER") }}
     password: {{ ssm("/path/to/pass") }}
 
-  data:
-    type: storage
-    provider: s3
-    bucket: {{ env("BUCKET_NAME") }}
+  cicd:
+    docker:
+      repo: {{ env("DOCKER_REPO") }}
+      user: {{ env("DOCKER_USER") }}
+      pass: {{ ssm("/path/to/pass") }}
 ```
