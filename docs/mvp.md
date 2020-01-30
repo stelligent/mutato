@@ -13,6 +13,7 @@
     - [3.2 Program Architecture](#32-program-architecture)
     - [3.3 YAML preprocessing](#33-yaml-preprocessing)
     - [3.4 MVP constructs](#34-mvp-constructs)
+    - [3.5 Integration With External CIs](#35-integration-with-external-cis)
   - [4. YAML Schema](#4-yaml-schema)
 
 ## 1. Introduction
@@ -139,13 +140,13 @@ working and deployed.
 
 1. `service`: can be a Dockerfile running either on ECS-EC2 or Fargate
 1. `database`: can have different engine types, focus on serverless
-1. `storage`: can be either S3, ECR, DockerHub or EFS mounted inside containers
-1. `cache`: can be either Memcached or ElastiCache, or CloudFront
+1. `storage`: can be either S3, or EFS mounted inside containers
+1. `cache`: can be either Memcached, ElastiCache, or CloudFront
 1. `queue`: can be a Dockerfile triggered by SQS task items
 1. `task`: can be a Dockerfile triggered by CloudWatch
 1. `cluster`: to customize the ECS service's cluster
-1. `network`: to customize the VPC params
-1. `cicd`: can be either CodePipeline or Drone CI
+1. `network`: to customize networking an VPC params
+1. `cicd`: CodePipeline, External CI, and Docker configuration
 
 MVP constructs are divided in three categories:
 
@@ -162,6 +163,46 @@ MVP constructs are divided in three categories:
 1. **infra**: infrastructure level constructs. These are necessary for utility
    and operational constructs to run. They include resources like a VPC and an
    ECS cluster. These constructs are currently `cluster`, `network`, and `cicd`.
+
+### 3.5 Integration With External CIs
+
+One of the core philosophies of Mu2 is being CI-agnostic (compare this to Mu1
+where the tool is tightly integrated with CodeBuild). This section talks about
+an abstract integration plan with External CIs.
+
+The integration with any external CI makes two basic assumptions:
+
+1. The external CI is able to be triggered programmatically
+1. The external CI is able to report back to CodePipeline at the end of builds
+
+Mu2 always creates a CodePipeline for containerized application's life cycle.
+This pipeline uses CodePipeline Custom Actions to create a job for an external
+CI and the external CI is triggered programmatically by polling jobs from Mu2's
+pipeline. CodePipeline waits for this custom action to be finished. The external
+CI then reports back to CodePipeline that the job has finished.
+
+This is the flow of Mu2's CodePipeline:
+
+1. Mu2 gathers information about the Docker repository in the `cicd` tag
+1. Operational Dockerfiles are built and pushed to the repository
+1. External CI is triggered for testing
+1. If CI step reports back success, deploy to ECS
+1. If CI step reports back failure, skip deploy to ECS
+1. Optionally notify users through SNS or Slack messages
+
+Mu2 is opinionated about user's source code following the Git Flow model, hence
+the master branch is assumed to be the release branch and push to other branches
+do not result in ECS deploys. They just result in building and testing. Release
+branch is configurable in the `cicd` tag.
+
+For MVP only CodeBuild is included. Since CodeBuild is natively supported by
+CodePipeline, a custom action is not required to trigger it obviously.
+
+Drone CI and Jenkins are planned for future
+releases. Jenkins already solves most of the problems of integration through the
+Jenkins [construct in CDK](https://docs.aws.amazon.com/cdk/api/latest/docs/@aws-cdk_aws-codepipeline-actions.JenkinsAction.html).
+Drone CI provides [programmatic triggers](https://github.com/drone/drone/issues/2679)
+but requires more manual labor to integrate compared to Jenkins.
 
 ## 4. YAML Schema
 
