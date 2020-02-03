@@ -1,6 +1,6 @@
 {
   "name": "mu",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "bin": {
     "mu": "bin/mu.js"
   },
@@ -10,7 +10,9 @@
     "compile": "tsc",
     "test": "nyc mocha test/**/*.test.ts",
     "lint:check": "prettier --check {lib,bin,test}/**/*.ts",
-    "lint:write": "prettier --check --write {lib,bin,test}/**/*.ts"
+    "lint:write": "prettier --check --write {lib,bin,test}/**/*.ts",
+    "clean": "git clean -xdff -e node_modules",
+    "docs:generate": "eslint . --ext .ts && typedoc"
   },
   "devDependencies": {
     "@aws-cdk/assert": "^1.21.1",
@@ -18,18 +20,23 @@
     "@types/chai-as-promised": "^7.1.2",
     "@types/mocha": "^5.2.7",
     "@types/node": "10.17.5",
+    "@typescript-eslint/eslint-plugin": "^2.19.0",
+    "@typescript-eslint/parser": "^2.19.0",
     "aws-cdk": "^1.21.1",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "choma": "^1.2.1",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.10.0",
+    "eslint-plugin-jsdoc": "^21.0.0",
+    "eslint-plugin-prettier": "^3.1.2",
     "mocha": "^7.0.0",
     "npm-run-all": "^4.1.5",
     "nyc": "^15.0.0",
     "prettier": "^1.19.1",
     "source-map-support": "^0.5.16",
     "ts-node": "^8.1.0",
-    "tslint": "^5.20.1",
-    "tslint-config-prettier": "^1.18.0",
+    "typedoc": "^0.16.9",
     "typescript": "~3.7.2"
   },
   "dependencies": {

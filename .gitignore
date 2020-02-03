@@ -3,6 +3,9 @@
 *.d.ts
 node_modules
 
+# Created by typedoc
+docs
+
 # CDK asset staging directory
 .cdk.staging
 cdk.out
