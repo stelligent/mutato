@@ -17,7 +17,17 @@
     "inlineSources": true,
     "experimentalDecorators": true,
     "strictPropertyInitialization":false,
-    "typeRoots": ["./node_modules/@types"]
+    "typeRoots": ["./node_modules/@types"],
+    "resolveJsonModule": true
   },
-  "exclude": ["cdk.out"]
+  "exclude": ["cdk.out"],
+  "typedocOptions": {
+    "exclude": "test/**",
+    "excludePrivate": true,
+    "excludeProtected": true,
+    "out": "docs",
+    "includeVersion": true,
+    "readme": "./README.md",
+    "gitRevision": "https://github.com/stelligent/mutato/tree/master"
+  }
 }
