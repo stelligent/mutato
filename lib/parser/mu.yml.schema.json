@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Mu version targeted by the mu.yml file. This is a semantic version string.",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "default": "latest version of Mu user is executing"
+    },
+    "mu": {
+      "type": "object",
+      "description": "The parent node of all Mu stacks. Every Mu-controlled constructs go under this node.",
+      "additionalProperties": false
+    }
+  },
+  "definitions": {
+    "construct_long": {
+      "type": "object",
+      "description": "Explicit version of a Mu construct specification.",
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": true
+    },
+    "construct_short": {
+      "type": "object",
+      "description": "Shorthand version of a Mu construct specification.",
+      "not": { "required": ["type"] },
+      "additionalProperties": true
+    }
+  }
+}
