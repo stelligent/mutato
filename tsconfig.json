@@ -25,9 +25,9 @@
     "exclude": "test/**",
     "excludePrivate": true,
     "excludeProtected": true,
-    "out": "documentation/docs",
+    "out": "docs",
     "includeVersion": true,
-    "readme": "./README.md",
+    "readme": "./docs/INDEX.md",
     "gitRevision": "https://github.com/stelligent/mutato/tree/master"
   }
 }
