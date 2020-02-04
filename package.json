@@ -1,6 +1,12 @@
 {
   "name": "mu",
   "version": "0.1.0",
+  "description": "simplify the declaration and administration of the AWS resources necessary to support microservices.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stelligent/mutato.git"
+  },
   "bin": {
     "mu": "bin/mu.js"
   },
