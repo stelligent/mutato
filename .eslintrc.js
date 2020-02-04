@@ -1,6 +1,9 @@
 module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
+  parserOptions: {
+    project: './tsconfig.json'
+  },
   plugins: [
     '@typescript-eslint',
     'prettier',
@@ -10,6 +13,7 @@ module.exports = {
     'eslint:recommended',
     'plugin:@typescript-eslint/eslint-recommended',
     'plugin:@typescript-eslint/recommended',
+    'plugin:@typescript-eslint/recommended-requiring-type-checking',
     'plugin:prettier/recommended',
     'plugin:jsdoc/recommended'
   ],
@@ -23,6 +27,19 @@ module.exports = {
           'MethodDefinition':true
         }
       }
+    ],
+    'jsdoc/check-examples': [
+      'error',
+      {
+        'baseConfig': {
+          'parser': '@typescript-eslint/parser'
+        }
+      }
     ]
+  },
+  "settings": {
+    jsdoc: {
+      mode: 'typescript'
+    }
   }
 };
