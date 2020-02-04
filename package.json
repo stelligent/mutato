@@ -1,6 +1,6 @@
 {
   "name": "mu",
-  "version": "0.1.1",
+  "version": "0.1.0",
   "bin": {
     "mu": "bin/mu.js"
   },
@@ -12,6 +12,7 @@
     "lint:check": "prettier --check {lib,bin,test}/**/*.ts",
     "lint:write": "prettier --check --write {lib,bin,test}/**/*.ts",
     "clean": "git clean -xdff -e node_modules",
+    "docs:check": "eslint . --ext .ts",
     "docs:generate": "eslint . --ext .ts && typedoc"
   },
   "devDependencies": {
@@ -74,5 +75,48 @@
     "printWidth": 80,
     "tabWidth": 2,
     "singleQuote": true
+  },
+  "eslintConfig": {
+    "root": true,
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+      "project": "./tsconfig.json"
+    },
+    "plugins": [
+      "@typescript-eslint",
+      "prettier",
+      "jsdoc"
+    ],
+    "extends": [
+      "plugin:@typescript-eslint/recommended",
+      "plugin:@typescript-eslint/recommended-requiring-type-checking",
+      "plugin:prettier/recommended",
+      "plugin:jsdoc/recommended"
+    ],
+    "rules": {
+      "jsdoc/require-jsdoc": [
+        "error",
+        {
+          "publicOnly": false,
+          "require": {
+            "ClassDeclaration":true,
+            "MethodDefinition":true
+          }
+        }
+      ],
+      "jsdoc/check-examples": [
+        "error",
+        {
+          "baseConfig": {
+            "parser": "@typescript-eslint/parser"
+          }
+        }
+      ]
+    },
+    "settings": {
+      "jsdoc": {
+        "mode": "typescript"
+      }
+    }
   }
 }
