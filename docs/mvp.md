@@ -120,11 +120,12 @@ The YAML file can contain the following dynamic Nunjucks filters:
 
 Every single construct under `lib/` shares a base construct. This base construct
 must allow for `async()` construction of all constructs. An example interface in
-this model would be:
+this model would be (don't mind my C++/TS mishmash!):
 
 ```JS
 interface IBaseConstruct extends CDK.Construct {
   public abstract async synth(): Promise<void>;
+  public name?: string;
 }
 ```
 
@@ -216,30 +217,20 @@ is implemented using CDK app-delivery module that enables it to self-heal.
 
 ## 4. YAML Schema
 
-Top level node in the YAML file is always `mu`. under that, the following format
-is acceptable as constructs:
+All Mu-managed constructs are grouped under the top level `mu` node in the YAML
+file. under that, the following format is acceptable as Mu constructs:
 
 ```YAML
-# shorthand version
 <type>:
-  prop1: val1
-  prop2: val2
-  prop3: ...
-
-# explicit version
-<name>:
-  type: <type>
+  name: <name>
   prop1: val1
   prop2: val2
   prop3: ...
 ```
 
-Combination of `<name>` and `<type>` is unique across the YAML file. Shorthand
-version is provided since `infra` constructs can only appear exactly once and it
-is confusing to write them as name/type (as it indicates it can be more than one
-and having a name is unnecessary in that case). In the shorthand version, type
-is inferred from the name directly. Lack of a _type_ prop indicates a shorthand
-version of a construct.
+Combination of `<type>` and `<name>` is unique across the YAML file. If the name
+property is present, there must be at most one construct with the type and name
+configuration specified, otherwise it is considered a fatal error.
 
 Here is a sample `mu.yml`:
 
@@ -247,16 +238,14 @@ Here is a sample `mu.yml`:
 version: 2.0
 
 mu:
-  app1:
-    type: service
-    provider: fargate
+  fargate:
+    name: app1
     port: 8000
     env:
       - doo: {{ env("FOO") }}
 
-  app2:
-    type: service
-    provider: fargate
+  fargate:
+    name: app2
     port: 9000
     env:
       - doo: {{ env("BAR") }}
