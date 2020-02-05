@@ -41,10 +41,17 @@ Documentation linting standards are provided with the following plugins recommen
 ## Q & A
 
 **Q)** When I run `npm install` I get a `gyp ERR` error `(Error: Command failed: {home}/.pyenv/shims/python -c import sys; print "%s.%s.%s" % sys.version_info[:3];)`. What gives?
-
 **A)** Your node gyp is using python 3+ to execute a non python 3+ compatible script. You can either:
 * Switch the python versios to one supported by that gyp version (i.e. 2.7.10) using pyenv or similar _(preferred)_
 * Update the gyp version to one compatible with [python 3](https://github.com/nodejs/node-gyp/tree/v6.1.0)
 	
 Then, rerun `npm install`. 
+
+**Q)** Mutato generates typescript definitions from a JSON schema. Is there a reason we aren't generating the JSON schema from our typescript definitions instead?
+**A)** Generating `*.d.ts` files from a JSON schema offers a few benefits compared to the reverse approach. Namely:
+* Single source of authority. 1 file is used for consumption vs many.
+* Portability. Validating against [JSON](https://json-schema.org/implementations.html) is less involved than validating against Typescript definitions.
+* Versatility. A JSON schema offers a wider range of [capabilities](https://json-schema.org/draft/2019-09/json-schema-validation.html) up front.
+
+The drawback of validating this direction occurs when an implementation is changed without updating the schema (or vice versa) happens. Such a case would cause the CI build to fail.
 
