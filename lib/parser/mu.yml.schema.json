@@ -8,27 +8,23 @@
       "default": "latest version of Mu, user is executing"
     },
     "mu": {
-      "type": "object",
-      "description": "The parent node of all Mu stacks. Every Mu-controlled constructs go under this node.",
-      "additionalProperties": false
+      "type": "array",
+      "description": "Collection of Mu constructs.",
+      "items": {
+        "$ref": "#/definitions/mu_construct"
+      }
     }
   },
   "definitions": {
-    "construct_long": {
+    "mu_construct": {
       "type": "object",
-      "description": "Explicit version of a Mu construct specification.",
+      "description": "Mu construct specification.",
       "properties": {
-        "type": {
-          "type": "string"
+        "name": {
+          "type": "string",
+          "description": "Optional name of the Mu construct."
         }
       },
-      "required": ["type"],
-      "additionalProperties": true
-    },
-    "construct_short": {
-      "type": "object",
-      "description": "Shorthand version of a Mu construct specification.",
-      "not": { "required": ["type"] },
       "additionalProperties": true
     }
   }
