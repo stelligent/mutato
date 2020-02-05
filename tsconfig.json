@@ -24,7 +24,6 @@
   "typedocOptions": {
     "exclude": "test/**",
     "excludePrivate": true,
-    "excludeProtected": true,
     "out": "docs",
     "includeVersion": true,
     "readme": "./docs/INDEX.md",

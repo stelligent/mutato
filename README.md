@@ -13,9 +13,14 @@ Pull the project and run `npm install`.
 Verify the installation was successfull with `npm build`
 
 
+## Contributing
+
+Contributions to the project are always welcome! Review the [Contribution Guide](CONTRIBUTING.md) so we're all on the same page.
+
+
 ## Documentation
 
-Designs, diagrams, and other documentation can be found in `docs`. Code documentation is auto-generated, provided by [typedoc](https://typedoc.org/) and enforced by [eslint](https://github.com/typescript-eslint/typescript-eslint) with the [eslint-plugin-jsdoc](https://github.com/gajus/eslint-plugin-jsdoc) plugin. See the `package.json` `docs:generate` script for exact usage. Note that Eslint is used in favor of [Tslint](https://github.com/palantir/tslint) due to the deprecation of that project.
+Designs, diagrams, and other documentation can be found in [`docs`](docs/). Code documentation is auto-generated, provided by [typedoc](https://typedoc.org/) and enforced by [eslint](https://github.com/typescript-eslint/typescript-eslint) with the [eslint-plugin-jsdoc](https://github.com/gajus/eslint-plugin-jsdoc) plugin. See the `package.json` `docs:generate` script for exact usage. Note that Eslint is used in favor of [Tslint](https://github.com/palantir/tslint) due to the deprecation of that project.
 
 Documentation linting standards are provided with the following plugins recommended guidelines:
 
@@ -35,3 +40,4 @@ Documentation linting standards are provided with the following plugins recommen
 * Update the gyp version to one compatible with [python 3](https://github.com/nodejs/node-gyp/tree/v6.1.0)
 	
 Then, rerun `npm install`. 
+

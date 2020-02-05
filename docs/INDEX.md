@@ -11,5 +11,5 @@ _The truth is out there._
 ### Get Started
 
 
-###### © 2020 Stelligent. All Rights Reserved.
+###### © 2020 Stelligent.
 ######  [stelligent/mutato](https://github.com/stelligent/mutato)

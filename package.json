@@ -19,7 +19,7 @@
     "lint:write": "prettier --check --write {lib,bin,test}/**/*.ts",
     "clean": "git clean -xdff -e node_modules",
     "docs:check": "eslint . --ext .ts",
-    "docs:generate": "eslint . --ext .ts && typedoc"
+    "docs:generate": "npm-run-all docs:check; typedoc"
   },
   "devDependencies": {
     "@aws-cdk/assert": "^1.21.1",
