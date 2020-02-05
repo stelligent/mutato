@@ -4,6 +4,13 @@ Stelligent Mutato is an open-source framework for building containerized micro-s
 
 _The truth is out there._
 
+## Table of Contents
+
+- [Getting Started](#getting-started)
+- [Contributing](#contributing)
+- [Documentation](#documentation)
+- [Q & A](#q--a)
+
 ## Getting started
 
 Currently, there are no prequisites to getting started.
@@ -20,7 +27,7 @@ Contributions to the project are always welcome! Review the [Contribution Guide]
 
 ## Documentation
 
-Designs, diagrams, and other documentation can be found in [`docs`](docs/). Code documentation is auto-generated, provided by [typedoc](https://typedoc.org/) and enforced by [eslint](https://github.com/typescript-eslint/typescript-eslint) with the [eslint-plugin-jsdoc](https://github.com/gajus/eslint-plugin-jsdoc) plugin. See the `package.json` `docs:generate` script for exact usage. Note that Eslint is used in favor of [Tslint](https://github.com/palantir/tslint) due to the deprecation of that project.
+Designs, diagrams, and other documentation can be found in [`docs`](docs/). Code documentation is auto-generated, provided by [typedoc](https://typedoc.org/) and enforced by [eslint](https://github.com/typescript-eslint/typescript-eslint) with the [eslint-plugin-jsdoc](https://github.com/gajus/eslint-plugin-jsdoc) plugin. See the `package.json` `docs` script for exact usage. Note that Eslint is used in favor of [Tslint](https://github.com/palantir/tslint) due to the deprecation of that project.
 
 Documentation linting standards are provided with the following plugins recommended guidelines:
 
