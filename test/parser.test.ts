@@ -54,16 +54,20 @@ describe('Parser Module Tests', () => {
 
       it('should throw if file does not exist', async () => {
         const parser = new Parser();
-        await chai.assert.isRejected(parser.parseFile('aliens.yml'));
+        await chai
+          .expect(parser.parseFile('aliens.yml'))
+          .to.eventually.be.rejectedWith(px.TemplateFileInaccessibleError);
       });
 
       it('should throw if schema is invalid', async () => {
         const parser = new Parser();
-        await chai.assert.isRejected(
-          parser.parseFile(
-            path.resolve(__dirname, 'fixtures/invalid-schema.yml')
+        await chai
+          .expect(
+            parser.parseFile(
+              path.resolve(__dirname, 'fixtures/invalid-schema.yml')
+            )
           )
-        );
+          .to.eventually.be.rejectedWith(px.ValidationFailedError);
       });
     });
   });
@@ -135,7 +139,7 @@ describe('Parser Module Tests', () => {
         const convert = new Converter();
         chai.assert.throws(() => {
           convert.convertString('string');
-        });
+        }, px.ConversionFailedError);
       });
     });
   });
@@ -152,7 +156,11 @@ describe('Parser Module Tests', () => {
       it('should throw with a string template and invalid context', async () => {
         const pp = new PreProcessor();
         const input = 'time: {{ invalid }}';
-        chai.assert.isRejected(pp.renderString(input));
+        // unfortunately Nunjucks does not allow exception propagation so our
+        // internal exception types are masked under px.RenderFailedError
+        await chai
+          .expect(pp.renderString(input))
+          .to.eventually.be.rejectedWith(px.RenderFailedError);
       });
 
       it('should be able to resolve environment variables', async () => {
@@ -163,9 +171,17 @@ describe('Parser Module Tests', () => {
 
       it('should throw when environment variable is not a string', async () => {
         const pp = new PreProcessor();
-        await chai.assert.isRejected(pp.renderString('{{ env(USER) }}'));
-        await chai.assert.isRejected(pp.renderString('{{ env(123) }}'));
-        await chai.assert.isRejected(pp.renderString('{{ env() }}'));
+        // unfortunately Nunjucks does not allow exception propagation so our
+        // internal exception types are masked under px.RenderFailedError
+        await chai
+          .expect(pp.renderString('{{ env(USER) }}'))
+          .to.eventually.be.rejectedWith(px.RenderFailedError);
+        await chai
+          .expect(pp.renderString('{{ env(123) }}'))
+          .to.eventually.be.rejectedWith(px.RenderFailedError);
+        await chai
+          .expect(pp.renderString('{{ env() }}'))
+          .to.eventually.be.rejectedWith(px.RenderFailedError);
       });
 
       it('should be able to resolve shell commands', async () => {
@@ -178,16 +194,26 @@ describe('Parser Module Tests', () => {
 
       it('should throw when shell command is not a string', async () => {
         const pp = new PreProcessor();
-        await chai.assert.isRejected(pp.renderString('{{ cmd(whomai) }}'));
-        await chai.assert.isRejected(pp.renderString('{{ cmd(123) }}'));
-        await chai.assert.isRejected(pp.renderString('{{ cmd() }}'));
+        // unfortunately Nunjucks does not allow exception propagation so our
+        // internal exception types are masked under px.RenderFailedError
+        await chai
+          .expect(pp.renderString('{{ cmd(whomai) }}'))
+          .to.eventually.be.rejectedWith(px.RenderFailedError);
+        await chai
+          .expect(pp.renderString('{{ cmd(123) }}'))
+          .to.eventually.be.rejectedWith(px.RenderFailedError);
+        await chai
+          .expect(pp.renderString('{{ cmd() }}'))
+          .to.eventually.be.rejectedWith(px.RenderFailedError);
       });
 
       it('should throw when shell commands exits with non zero code', async () => {
         const pp = new PreProcessor();
-        await chai.assert.isRejected(
-          pp.renderString('user: {{ cmd("exit 1") }}')
-        );
+        // unfortunately Nunjucks does not allow exception propagation so our
+        // internal exception types are masked under px.RenderFailedError
+        await chai
+          .expect(pp.renderString('user: {{ cmd("exit 1") }}'))
+          .to.eventually.be.rejectedWith(px.RenderFailedError);
       });
     });
 
@@ -202,7 +228,9 @@ describe('Parser Module Tests', () => {
 
       it('should throw when given an invalid file path', async () => {
         const pp = new PreProcessor();
-        await chai.assert.isRejected(pp.renderFile('aliens.yml'));
+        await chai
+          .expect(pp.renderFile('aliens.yml'))
+          .to.eventually.be.rejectedWith(px.TemplateFileInaccessibleError);
       });
     });
   });
