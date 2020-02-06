@@ -50,7 +50,6 @@
     "@aws-cdk/core": "^1.22.0",
     "@types/bluebird": "^3.5.29",
     "@types/debug": "^4.1.5",
-    "@types/fs-extra": "^8.0.1",
     "@types/js-yaml": "^3.12.2",
     "@types/lodash": "^4.14.149",
     "@types/nunjucks": "^3.1.3",
