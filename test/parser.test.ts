@@ -1,11 +1,38 @@
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
+import * as fsx from 'fs-extra';
 import * as path from 'path';
+import { Converter } from '../lib/parser/converter';
 import { PreProcessor } from '../lib/parser/preprocessor';
 
 chai.use(chaiAsPromised);
 
 describe('Parser Tests', () => {
+  describe('Converter tests', () => {
+    describe('.convertString tests', () => {
+      it('should be able to convert a basic string', () => {
+        const convert = new Converter();
+        const result = convert.convertString(
+          fsx.readFileSync(path.resolve(__dirname, 'fixtures/basic-yaml.yml'), {
+            encoding: 'utf-8'
+          })
+        );
+        chai.assert.isObject(result);
+        chai.assert.deepEqual(result, {
+          version: 0.1,
+          mu: { fargate: { name: 'app', test: 'foo' } }
+        });
+      });
+
+      it('should throw if the input is not YAML', () => {
+        const convert = new Converter();
+        chai.assert.throws(() => {
+          convert.convertString('string');
+        });
+      });
+    });
+  });
+
   describe('PreProcessor tests', () => {
     describe('.renderString tests', () => {
       it('should be able to render a basic string template', async () => {
