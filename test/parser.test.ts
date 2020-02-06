@@ -47,6 +47,13 @@ describe('Parser Tests', () => {
       await chai.assert.isRejected(pp.renderString('{{ cmd(123) }}'));
       await chai.assert.isRejected(pp.renderString('{{ cmd() }}'));
     });
+
+    it('should throw when shell commands exits with non zero code', async () => {
+      const pp = new PreProcessor();
+      await chai.assert.isRejected(
+        pp.renderString('user: {{ cmd("exit 1") }}')
+      );
+    });
   });
 
   describe('.renderFile tests', () => {
