@@ -1,5 +1,6 @@
 {
   "type": "object",
+  "required": ["mu"],
   "properties": {
     "version": {
       "type": "string",
@@ -8,10 +9,12 @@
       "default": "latest version of Mu, user is executing"
     },
     "mu": {
-      "type": "array",
+      "type": "object",
       "description": "Collection of Mu constructs.",
-      "items": {
-        "$ref": "#/definitions/mu_construct"
+      "patternProperties": {
+        ".*": {
+          "$ref": "#/definitions/mu_construct"
+        }
       }
     }
   },
