@@ -7,5 +7,9 @@ Mu uses for constructs initialization.
 This is how everything is wired up:
 
 ```text
-Input > Nunjucks > YAML parser > JSON > JSON schema validation > Initialization
+mu.yml >   Nunjucks    > YAML parser > JSON > JSON schema validation > objects
+                          |              |
+         PreProcessor  >  |_  Converter _|  >       Validator
+              |                                         |
+              |_               Parser                  _|
 ```
