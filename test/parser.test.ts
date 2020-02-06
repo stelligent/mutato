@@ -4,10 +4,36 @@ import * as fsx from 'fs-extra';
 import * as path from 'path';
 import { Converter } from '../lib/parser/converter';
 import { PreProcessor } from '../lib/parser/preprocessor';
+import { Validator } from '../lib/parser/validator';
 
 chai.use(chaiAsPromised);
 
 describe('Parser Tests', () => {
+  describe('Validator tests', () => {
+    describe('.validate tests', () => {
+      it('should be able to validate a basic schema', () => {
+        const convert = new Converter();
+        const json = convert.convertString(
+          fsx.readFileSync(
+            path.resolve(__dirname, 'fixtures/basic-schema.yml'),
+            {
+              encoding: 'utf-8'
+            }
+          )
+        );
+        const validator = new Validator();
+        chai.assert.isTrue(validator.validateObject(json));
+      });
+
+      it('should not throw if the input is not valid', () => {
+        const validator = new Validator();
+        chai.assert.doesNotThrow(() => {
+          validator.validateObject({ invalid: 'yes' });
+        });
+      });
+    });
+  });
+
   describe('Converter tests', () => {
     describe('.convertString tests', () => {
       it('should be able to convert a basic string', () => {
