@@ -5,6 +5,7 @@ import * as debug from 'debug';
 import * as fsx from 'fs-extra';
 import * as _ from 'lodash';
 import * as nunjucks from 'nunjucks';
+import * as px from './exceptions';
 
 const log = debug('mu:parser:PreProcessor');
 
@@ -13,10 +14,16 @@ const log = debug('mu:parser:PreProcessor');
  *
  * @param {string} name environment variable name
  * @returns {string }environment variable value, empty string if not found
+ * @throws {px.EnvironmentVariableNotValidError}
  */
 function nunjucks_env_global(name: string): string {
   log('attempting to resolve environment variable %s', name);
-  assert.ok(_.isString(name), 'environment variable name must be a string');
+  try {
+    assert.ok(_.isString(name));
+  } catch (err) {
+    log('environment variable resolution failed: %o', err);
+    throw new px.EnvironmentVariableNotValidError(name);
+  }
   return _.get(process.env, name, '');
 }
 
@@ -26,17 +33,30 @@ function nunjucks_env_global(name: string): string {
  * @param {string} command shell command execute. can contain shell operators
  * @returns {string} string output of the executed command the output is trimmed
  * from whitespace and newlines (trailing newline as well)
+ * @throws {px.ShellCommandNotValidError}
+ * @throws {px.ShellCommandFailedError}
  * @todo make this async
+ * @todo make timeout to be read from config
  */
 function nunjucks_cmd_global(command: string): string {
   log('attempting to execute command %s', command);
-  assert.ok(_.isString(command), 'shell command must be a string');
-  return _.trim(
-    cp.execSync(command, {
-      encoding: 'utf8',
-      timeout: 10000
-    })
-  );
+  try {
+    assert.ok(_.isString(command));
+  } catch (err) {
+    log('shell command must be a string: %o', err);
+    throw new px.ShellCommandNotValidError(command);
+  }
+  try {
+    return _.trim(
+      cp.execSync(command, {
+        encoding: 'utf8',
+        timeout: 10000
+      })
+    );
+  } catch (err) {
+    log('shell command exited with non-zero status: %o', err);
+    throw new px.ShellCommandFailedError(command);
+  }
 }
 
 /**
@@ -49,7 +69,11 @@ export class PreProcessor {
   private readonly env: nunjucks.Environment;
   private readonly ctx: object;
 
-  /** @hideconstructor */
+  /**
+   * @hideconstructor
+   * @todo implement the "ssm" Nunjucks global function
+   * @todo implement the "asm" Nunjucks global function
+   */
   constructor() {
     this.env = new nunjucks.Environment(null, {
       autoescape: false,
@@ -60,7 +84,6 @@ export class PreProcessor {
     this.ctx = { build_time: Date.now() };
     log('a new preprocessor is initialized with context: %o', this.ctx);
 
-    // TODO: add ssm and asm filters here
     this.env.addGlobal('env', nunjucks_env_global);
     this.env.addGlobal('cmd', nunjucks_cmd_global);
   }
@@ -75,16 +98,20 @@ export class PreProcessor {
    *
    * @param {string} input unprocessed input template string
    * @returns {string} processed template
+   * @throws {px.RenderFailedError}
    */
   public async renderString(input: string): Promise<string> {
     log('attempting to render a string: %s', input);
     // note: promisify is required because we have async filters. more info:
     // https://mozilla.github.io/nunjucks/api.html#asynchronous-support
-    return (
-      (await bluebird.promisify(
+    try {
+      return (await bluebird.promisify(
         this.env.renderString.bind(this.env, input, this.ctx)
-      )()) || ''
-    );
+      )()) as string;
+    } catch (err) {
+      log('template rendering failed: %o', err);
+      throw new px.RenderFailedError();
+    }
   }
 
   /**
@@ -92,10 +119,16 @@ export class PreProcessor {
    *
    * @param {string} path unprocessed input template file
    * @returns {string} processed template
+   * @throws {px.TemplateFileInaccessible}
    */
   public async renderFile(path: string): Promise<string> {
     log('attempting to render a file: %s', path);
-    assert.ok(await fsx.pathExists(path), 'template file is inaccessible');
+    try {
+      assert.ok(await fsx.pathExists(path));
+    } catch (err) {
+      log('template file is inaccessible: %o', err);
+      throw new px.TemplateFileInaccessible(path);
+    }
     const input = await fsx.readFile(path);
     return this.renderString(input.toString());
   }

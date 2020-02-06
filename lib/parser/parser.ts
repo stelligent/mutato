@@ -1,6 +1,7 @@
 import * as assert from 'assert';
 import * as debug from 'debug';
 import { Converter } from './converter';
+import * as px from './exceptions';
 import { PreProcessor } from './preprocessor';
 import { Validator } from './validator';
 
@@ -57,11 +58,20 @@ export class Parser {
   }
 
   /**
-   * @param yamlString
+   * shared code path for public methods of parser
+   *
+   * @param {string} yamlString YAML string to parse
+   * @returns {object} YAML to JSON converted object
+   * @throws {px.ValidationFailedError}
    */
   private parseYAML(yamlString: string): object {
     const json = this.converter.convertString(yamlString);
-    assert.ok(this.validator.validateObject(json));
+    try {
+      assert.ok(this.validator.validateObject(json));
+    } catch (err) {
+      log('schema validation failed: %o', err);
+      throw new px.ValidationFailedError();
+    }
     return json;
   }
 }
