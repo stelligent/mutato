@@ -1,0 +1,20 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 10
+    commands:
+      - ls
+  pre_build:
+    commands:
+      - echo 'Lint project'
+      - echo 'Run unit tests && store artifacts'
+      - echo 'Generate documentation && store artifacts'
+  build:
+    commands:
+      - npm install
+  post_build:
+    commands:
+      - echo 'Deploy documentation'
+      - echo 'Run integration tests'

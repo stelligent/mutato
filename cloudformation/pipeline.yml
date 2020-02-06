@@ -1,0 +1,149 @@
+Description: Mutato CI Pipeline
+Parameters:
+  GithubOwner:
+    Type: String
+  GithubRepo:
+    Type: String
+  OauthToken:
+    Type: String
+  GithubBranch:
+    Type: String
+Resources:
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: BucketOwnerFullControl
+    DeletionPolicy: Delete
+  ArtifactBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ArtifactBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                - !Join ['', ['arn:aws:iam::', !Ref 'AWS::AccountId', ':root']]
+            Action:
+              - 's3:GetObject'
+              - 's3:PutObject'
+              - 's3:DeleteObject'
+            Resource:
+              - !GetAtt [ArtifactBucket, Arn]
+              - !Join ['', ['arn:aws:s3:::', !Ref ArtifactBucket, '/*']]
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Ref AWS::StackName
+      ServiceRole: !GetAtt CodePipelineCodeBuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
+        Type: LINUX_CONTAINER
+      Source:
+        Type: CODEPIPELINE
+  CodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: '1'
+              Configuration:
+                Owner: !Ref GithubOwner
+                Repo: !Ref GithubRepo
+                PollForSourceChanges: true
+                Branch: !Ref GithubBranch
+                OAuthToken: !Ref OauthToken
+              Name: SourceAction
+              OutputArtifacts:
+                - Name: repo
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+                PrimarySource: repo
+              Name: BuildAction
+              InputArtifacts:
+                - Name: repo
+              RunOrder: 1
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Policies:
+        - PolicyName: MutatoPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'iam:PassRole'
+                  - 'sts:AssumeRole'
+                  - 'codebuild:StartBuild'
+                  - 'codebuild:StopBuild'
+                  - 'codebuild:BatchGetBuilds'
+                  - 'codepipeline:*'
+                  - 's3:DeleteObject'
+                  - 's3:GetObject'
+                  - 's3:ListBucket'
+                  - 's3:PutObject'
+                Resource: '*'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'codepipeline.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+  CodePipelineCodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Policies:
+        - PolicyName: Mutato-CodeBuild-Policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                  - 'cloudformation:ValidateTemplate'
+                  - 'cloudformation:DescribeStacks'
+                  - 's3:Get*'
+                  - 's3:List*'
+                Resource: '*'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'codebuild.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+Outputs:
+  S3ArtifactBucket:
+    Value: !Ref ArtifactBucket
+  CodePipelineName:
+    Value: !Ref CodePipeline
+  CodeBuildName:
+    Value: !Ref CodeBuildProject

@@ -1,0 +1,18 @@
+[
+  {
+    "ParameterKey": "GithubOwner",
+    "ParameterValue": "ghUser"
+  },
+  {
+    "ParameterKey": "GithubRepo",
+    "ParameterValue": "mutato"
+  },
+  {
+    "ParameterKey": "GithubBranch",
+    "ParameterValue": "develop"
+  },
+  {
+    "ParameterKey": "OauthToken",
+    "ParameterValue": "XXXX"
+  }
+]
