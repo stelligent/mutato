@@ -6,7 +6,7 @@ import * as fsx from 'fs-extra';
 import * as _ from 'lodash';
 import * as nunjucks from 'nunjucks';
 
-const log = debug('mu:PreProcessor');
+const log = debug('mu:parser:PreProcessor');
 
 /**
  * global env function of our Nunjucks Environment
