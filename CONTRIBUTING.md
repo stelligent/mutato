@@ -49,6 +49,7 @@ Pull requests should target the `develop` branch.  Ensure you have a successful 
 When submitting code, please make every effort to follow existing conventions and style in order to keep the code as readable as possible.  Here are a few points to keep in mind:
 
 * Please run `npm run-script lint:check` before committing to ensure code aligns with go standards.
+* Ensure all Classes, and Functions are documented appropriately as for the [JSDoc](https://devdocs.io/jsdoc/) standard. See the project `README.md` for these instructions.
 * All dependencies must be defined in the `package.json` file and pinned to a patch range.  This is accomplished via a command like `npm install --save-dev {PKG}` for development dependencies or `npm install {PKG}` otherwise 
 
 Also, consider the original design principles:
@@ -61,6 +62,6 @@ Also, consider the original design principles:
 
 ### License
 
-By contributing your code, you agree to license your contribution under the terms of the [MIT License](LICENSE.md).
+By contributing your code, you agree to license your contribution under the terms of the [MIT License](LICENSE).
 
 All files are released with the MIT license.
