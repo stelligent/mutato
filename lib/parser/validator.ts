@@ -1,6 +1,6 @@
 import * as ajv from 'ajv';
 import * as debug from 'debug';
-import * as fsx from 'fs-extra';
+import * as fs from 'fs';
 import * as path from 'path';
 import * as px from './exceptions';
 
@@ -21,7 +21,7 @@ export class Validator {
     try {
       this.validator = this.ajv.compile(
         JSON.parse(
-          fsx.readFileSync(path.resolve(__dirname, 'mu.yml.schema.json'), {
+          fs.readFileSync(path.resolve(__dirname, 'mu.yml.schema.json'), {
             encoding: 'utf-8'
           })
         )

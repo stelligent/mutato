@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import * as bluebird from 'bluebird';
 import * as cp from 'child_process';
 import * as debug from 'debug';
-import * as fsx from 'fs-extra';
+import { promises as fs } from 'fs';
 import * as _ from 'lodash';
 import * as nunjucks from 'nunjucks';
 import * as px from './exceptions';
@@ -124,12 +124,12 @@ export class PreProcessor {
   public async renderFile(path: string): Promise<string> {
     log('attempting to render a file: %s', path);
     try {
-      assert.ok(await fsx.pathExists(path));
+      assert.ok((await fs.stat(path)).isFile());
     } catch (err) {
       log('template file is inaccessible: %o', err);
       throw new px.TemplateFileInaccessibleError(path);
     }
-    const input = await fsx.readFile(path);
+    const input = await fs.readFile(path, { encoding: 'utf-8' });
     return this.renderString(input.toString());
   }
 }

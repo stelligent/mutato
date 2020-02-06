@@ -1,6 +1,6 @@
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
-import * as fsx from 'fs-extra';
+import { promises as fs } from 'fs';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { Converter, Parser, PreProcessor, Validator } from '../lib/parser';
@@ -14,7 +14,7 @@ describe('Parser Module Tests', () => {
       it('should be able to parse a basic schema string', async () => {
         const parser = new Parser();
         const json = await parser.parseString(
-          fsx.readFileSync(
+          await fs.readFile(
             path.resolve(__dirname, 'fixtures/basic-schema.yml'),
             {
               encoding: 'utf-8'
@@ -74,10 +74,10 @@ describe('Parser Module Tests', () => {
 
   describe('Validator class tests', () => {
     describe('.validate tests', () => {
-      it('should be able to validate a basic schema', () => {
+      it('should be able to validate a basic schema', async () => {
         const convert = new Converter();
         const json = convert.convertString(
-          fsx.readFileSync(
+          await fs.readFile(
             path.resolve(__dirname, 'fixtures/basic-schema.yml'),
             {
               encoding: 'utf-8'
@@ -98,7 +98,7 @@ describe('Parser Module Tests', () => {
 
     describe('fault tolerance when schema is missing', () => {
       before(async () => {
-        await fsx.move(
+        await fs.rename(
           path.resolve(__dirname, '../lib/parser/mu.yml.schema.json'),
           path.resolve(__dirname, '../lib/parser/mu.yml.schema.json.bak')
         );
@@ -111,7 +111,7 @@ describe('Parser Module Tests', () => {
       });
 
       after(async () => {
-        await fsx.move(
+        await fs.rename(
           path.resolve(__dirname, '../lib/parser/mu.yml.schema.json.bak'),
           path.resolve(__dirname, '../lib/parser/mu.yml.schema.json')
         );
@@ -121,12 +121,15 @@ describe('Parser Module Tests', () => {
 
   describe('Converter class tests', () => {
     describe('.convertString tests', () => {
-      it('should be able to convert a basic string', () => {
+      it('should be able to convert a basic string', async () => {
         const convert = new Converter();
         const result = convert.convertString(
-          fsx.readFileSync(path.resolve(__dirname, 'fixtures/basic-yaml.yml'), {
-            encoding: 'utf-8'
-          })
+          await fs.readFile(
+            path.resolve(__dirname, 'fixtures/basic-yaml.yml'),
+            {
+              encoding: 'utf-8'
+            }
+          )
         );
         chai.assert.isObject(result);
         chai.assert.deepEqual(result, {
