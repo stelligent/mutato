@@ -21,5 +21,13 @@
     "resolveJsonModule": true,
     "moduleResolution": "node"
   },
-  "exclude": ["cdk.out"]
+  "exclude": ["cdk.out"],
+  "typedocOptions": {
+    "exclude": "test/**",
+    "excludePrivate": true,
+    "out": "docs",
+    "includeVersion": true,
+    "readme": "./docs/INDEX.md",
+    "gitRevision": "https://github.com/stelligent/mutato/tree/master"
+  }
 }
