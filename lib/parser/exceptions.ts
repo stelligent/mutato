@@ -81,7 +81,7 @@ export class RenderFailedError extends PreProcessorError {
 }
 
 /** Error thrown by the preprocessor if a template file is not accessible */
-export class TemplateFileInaccessible extends PreProcessorError {
+export class TemplateFileInaccessibleError extends PreProcessorError {
   /**
    * @hideconstructor
    * @param {string} path template file path

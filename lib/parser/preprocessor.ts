@@ -119,7 +119,7 @@ export class PreProcessor {
    *
    * @param {string} path unprocessed input template file
    * @returns {string} processed template
-   * @throws {px.TemplateFileInaccessible}
+   * @throws {px.TemplateFileInaccessibleError}
    */
   public async renderFile(path: string): Promise<string> {
     log('attempting to render a file: %s', path);
@@ -127,7 +127,7 @@ export class PreProcessor {
       assert.ok(await fsx.pathExists(path));
     } catch (err) {
       log('template file is inaccessible: %o', err);
-      throw new px.TemplateFileInaccessible(path);
+      throw new px.TemplateFileInaccessibleError(path);
     }
     const input = await fsx.readFile(path);
     return this.renderString(input.toString());
