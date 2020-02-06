@@ -3,10 +3,7 @@ import * as chaiAsPromised from 'chai-as-promised';
 import * as fsx from 'fs-extra';
 import * as _ from 'lodash';
 import * as path from 'path';
-import { Converter } from '../lib/parser/converter';
-import { Parser } from '../lib/parser/parser';
-import { PreProcessor } from '../lib/parser/preprocessor';
-import { Validator } from '../lib/parser/validator';
+import { Converter, Parser, PreProcessor, Validator } from '../lib/parser';
 
 chai.use(chaiAsPromised);
 
