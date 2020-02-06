@@ -1,15 +1,76 @@
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import * as fsx from 'fs-extra';
+import * as _ from 'lodash';
 import * as path from 'path';
 import { Converter } from '../lib/parser/converter';
+import { Parser } from '../lib/parser/parser';
 import { PreProcessor } from '../lib/parser/preprocessor';
 import { Validator } from '../lib/parser/validator';
 
 chai.use(chaiAsPromised);
 
-describe('Parser Tests', () => {
-  describe('Validator tests', () => {
+describe('Parser Module Tests', () => {
+  describe('Parser class tests', () => {
+    describe('.parseString tests', () => {
+      it('should be able to parse a basic schema string', async () => {
+        const parser = new Parser();
+        const json = await parser.parseString(
+          fsx.readFileSync(
+            path.resolve(__dirname, 'fixtures/basic-schema.yml'),
+            {
+              encoding: 'utf-8'
+            }
+          )
+        );
+        chai.assert.isObject(json);
+        chai.assert.deepEqual(json, {
+          version: '0.0.0',
+          mu: {
+            fargate: {
+              name: `app-${_.get(parser.context, 'build_time')}-${
+                process.env.USER
+              }`
+            }
+          }
+        });
+      });
+
+      it('should be able to parse a basic schema file', async () => {
+        const parser = new Parser();
+        const json = await parser.parseFile(
+          path.resolve(__dirname, 'fixtures/basic-schema.yml')
+        );
+        chai.assert.isObject(json);
+        chai.assert.deepEqual(json, {
+          version: '0.0.0',
+          mu: {
+            fargate: {
+              name: `app-${_.get(parser.context, 'build_time')}-${
+                process.env.USER
+              }`
+            }
+          }
+        });
+      });
+
+      it('should throw if file does not exist', async () => {
+        const parser = new Parser();
+        await chai.assert.isRejected(parser.parseFile('aliens.yml'));
+      });
+
+      it('should throw if schema is invalid', async () => {
+        const parser = new Parser();
+        await chai.assert.isRejected(
+          parser.parseFile(
+            path.resolve(__dirname, 'fixtures/invalid-schema.yml')
+          )
+        );
+      });
+    });
+  });
+
+  describe('Validator class tests', () => {
     describe('.validate tests', () => {
       it('should be able to validate a basic schema', () => {
         const convert = new Converter();
@@ -34,7 +95,7 @@ describe('Parser Tests', () => {
     });
   });
 
-  describe('Converter tests', () => {
+  describe('Converter class tests', () => {
     describe('.convertString tests', () => {
       it('should be able to convert a basic string', () => {
         const convert = new Converter();
@@ -59,7 +120,7 @@ describe('Parser Tests', () => {
     });
   });
 
-  describe('PreProcessor tests', () => {
+  describe('PreProcessor class tests', () => {
     describe('.renderString tests', () => {
       it('should be able to render a basic string template', async () => {
         const pp = new PreProcessor();

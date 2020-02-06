@@ -65,6 +65,11 @@ export class PreProcessor {
     this.env.addGlobal('cmd', nunjucks_cmd_global);
   }
 
+  /** @returns {object} build context of preprocessor */
+  public get context(): object {
+    return this.ctx;
+  }
+
   /**
    * renders the input string template through our Nunjucks Environment
    *
