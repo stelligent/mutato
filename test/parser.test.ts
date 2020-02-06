@@ -4,6 +4,7 @@ import * as fsx from 'fs-extra';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { Converter, Parser, PreProcessor, Validator } from '../lib/parser';
+import * as px from '../lib/parser/exceptions';
 
 chai.use(chaiAsPromised);
 
@@ -88,6 +89,28 @@ describe('Parser Module Tests', () => {
         chai.assert.doesNotThrow(() => {
           validator.validateObject({ invalid: 'yes' });
         });
+      });
+    });
+
+    describe('fault tolerance when schema is missing', () => {
+      before(async () => {
+        await fsx.move(
+          path.resolve(__dirname, '../lib/parser/mu.yml.schema.json'),
+          path.resolve(__dirname, '../lib/parser/mu.yml.schema.json.bak')
+        );
+      });
+
+      it('should throw an error if there is something wrong with the schema', () => {
+        chai.assert.throws(() => {
+          new Validator();
+        }, px.InvalidMuSchemaError);
+      });
+
+      after(async () => {
+        await fsx.move(
+          path.resolve(__dirname, '../lib/parser/mu.yml.schema.json.bak'),
+          path.resolve(__dirname, '../lib/parser/mu.yml.schema.json')
+        );
       });
     });
   });
