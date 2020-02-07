@@ -1,10 +1,12 @@
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as cdk from '@aws-cdk/core';
-import { IInfraConstruct } from './interfaces';
+import * as debug from 'debug';
+import { BaseConstruct, IInfraConstruct } from './interfaces';
 
 /** Base infra construct interface */
-export abstract class Network extends IInfraConstruct {
+export class Network extends BaseConstruct implements IInfraConstruct {
   public readonly vpc: ec2.Vpc;
+  private readonly log: debug.Debugger;
 
   /**
    * @hideconstructor
@@ -15,5 +17,8 @@ export abstract class Network extends IInfraConstruct {
     super(scope, id);
 
     this.vpc = new ec2.Vpc(this, 'VPC');
+    this.log = debug(`mu:Network:${id}`);
+
+    this.log('construct initialized');
   }
 }
