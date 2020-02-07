@@ -1,4 +1,4 @@
-import { IBaseConstruct } from './base-construct';
+import { BaseConstruct } from './base-construct';
 
 /** Base operational construct interface */
-export abstract class IOperationalConstruct extends IBaseConstruct {}
+export interface IOperationalConstruct extends BaseConstruct {}
