@@ -48,6 +48,7 @@
   },
   "dependencies": {
     "@aws-cdk/aws-ec2": "^1.23.0",
+    "@aws-cdk/aws-ecs": "^1.23.0",
     "@aws-cdk/core": "^1.23.0",
     "@types/bluebird": "^3.5.29",
     "@types/debug": "^4.1.5",
@@ -132,7 +133,9 @@
         }
       ],
       "prettier/prettier": "error",
-      "@typescript-eslint/camelcase": "off"
+      "@typescript-eslint/camelcase": "off",
+      "@typescript-eslint/no-empty-interface": "off",
+      "@typescript-eslint/interface-name-prefix": "off"
     },
     "settings": {
       "jsdoc": {
