@@ -23,14 +23,14 @@ Resources:
           - Effect: Allow
             Principal:
               AWS:
-                - !Join ['', ['arn:aws:iam::', !Ref 'AWS::AccountId', ':root']]
+                - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:root
             Action:
-              - 's3:GetObject'
-              - 's3:PutObject'
-              - 's3:DeleteObject'
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
             Resource:
-              - !GetAtt [ArtifactBucket, Arn]
-              - !Join ['', ['arn:aws:s3:::', !Ref ArtifactBucket, '/*']]
+              - !GetAtt ArtifactBucket.Arn
+              - !Sub arn:${AWS::Partition}:s3:::${ArtifactBucket}/${CodePipeline}
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -93,26 +93,28 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - 'iam:PassRole'
-                  - 'sts:AssumeRole'
-                  - 'codebuild:StartBuild'
-                  - 'codebuild:StopBuild'
-                  - 'codebuild:BatchGetBuilds'
-                  - 'codepipeline:*'
-                  - 's3:DeleteObject'
-                  - 's3:GetObject'
-                  - 's3:ListBucket'
-                  - 's3:PutObject'
-                Resource: '*'
+                  - sts:AssumeRole
+                  - codebuild:StartBuild
+                  - codebuild:StopBuild
+                  - codebuild:BatchGetBuilds
+                  - codepipeline:*
+                  - s3:DeleteObject
+                  - s3:GetObject
+                  - s3:ListBucket
+                  - s3:PutObject
+                Resource:
+                  - !Ref ArtifactBucket.Arn
+                  - !Ref CodeBuildProject.Arn
+                  - !Ref CodePipeline.Arn
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: 2012-10-17
         Statement:
-          - Effect: 'Allow'
+          - Effect: Allow
             Principal:
               Service:
-                - 'codepipeline.amazonaws.com'
+                - codepipeline.amazonaws.com
             Action:
-              - 'sts:AssumeRole'
+              - sts:AssumeRole
   CodePipelineCodeBuildRole:
     Type: AWS::IAM::Role
     Properties:
@@ -123,27 +125,43 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - 'logs:CreateLogGroup'
-                  - 'logs:CreateLogStream'
-                  - 'logs:PutLogEvents'
-                  - 'cloudformation:ValidateTemplate'
-                  - 'cloudformation:DescribeStacks'
-                  - 's3:Get*'
-                  - 's3:List*'
-                Resource: '*'
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - cloudformation:ValidateTemplate
+                  - cloudformation:DescribeStacks
+                  - s3:Get*
+                  - s3:List*
+                Resource:
+                  - !Ref ArtifactBucket.Arn
+                  - !Sub arn:${AWS::Partition}:codebuild
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: 2012-10-17
         Statement:
-          - Effect: 'Allow'
+          - Effect: Allow
             Principal:
               Service:
-                - 'codebuild.amazonaws.com'
+                - codebuild.amazonaws.com
             Action:
-              - 'sts:AssumeRole'
-Outputs:
-  S3ArtifactBucket:
-    Value: !Ref ArtifactBucket
-  CodePipelineName:
-    Value: !Ref CodePipeline
-  CodeBuildName:
-    Value: !Ref CodeBuildProject
+              - sts:AssumeRole
+  OutputS3ArtifactBucket:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /stelligent/mutato/s3artifactbucket
+      Type: String
+      Value: !Ref ArtifactBucket
+      Description: S3 Location of CI output artifacts for Mutato
+  OutputCodePipelineName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /stelligent/mutato/codepipelinename
+      Type: String
+      Value: !Ref CodePipeline
+      Description: Name of the Codepipeline for Mutato
+  OutputCodeBuildName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /stelligent/mutato/codebuildproject
+      Type: String
+      Value: !Ref CodeBuildProject
+      Description: Name of the Codebuild Project for Mutato
