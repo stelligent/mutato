@@ -19,7 +19,7 @@
     "lint:write": "prettier --check --write {lib,bin,test}/**/*.ts",
     "clean": "git clean -xdff -e node_modules",
     "docs:check": "eslint . --ext .ts",
-    "docs:generate": "typedoc",
+    "docs:generate": "typedoc --disableOutputCheck",
     "docs": "npm-run-all docs:*"
   },
   "devDependencies": {
@@ -106,8 +106,8 @@
         {
           "publicOnly": false,
           "require": {
-            "ClassDeclaration":true,
-            "MethodDefinition":true
+            "ClassDeclaration": true,
+            "MethodDefinition": true
           }
         }
       ],

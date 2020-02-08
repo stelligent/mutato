@@ -8,6 +8,7 @@ phases:
     commands:
       - echo 'Lint project'
       - echo 'Run unit tests && store artifacts'
+      - npm install
       - npm run-script docs
       - git mv docs/* ./
       - git commit -am '[ci] - Deploy docs'
