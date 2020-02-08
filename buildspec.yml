@@ -3,14 +3,17 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      nodejs: 10
+      nodejs: lts
     commands:
       - ls
   pre_build:
     commands:
       - echo 'Lint project'
       - echo 'Run unit tests && store artifacts'
-      - echo 'Generate documentation && store artifacts'
+      - npm run-script docs
+      - git mv docs/* ./
+      - git commit -am '[ci] - Deploy docs'
+      - git push -f origin gh-pages
   build:
     commands:
       - npm install
