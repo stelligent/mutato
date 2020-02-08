@@ -1,0 +1,13 @@
+{
+  "mu": [
+    {
+      "database": {
+        "type": "object",
+        "name": "mydatabase",
+        "provider": "rds",
+        "engine": "mysql"
+      }
+    },
+    { "database": {} }
+  ]
+}

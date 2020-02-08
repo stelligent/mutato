@@ -1,5 +1,4 @@
 import * as cdk from '@aws-cdk/core';
-
 /**
  * @class MuStack - primary stack
  */

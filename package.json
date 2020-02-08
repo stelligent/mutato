@@ -14,7 +14,7 @@
     "build": "npm-run-all lint:check compile",
     "watch": "tsc -w",
     "compile": "tsc",
-    "test": "nyc mocha test/**/*.test.ts",
+    "test": "nyc mocha --recursive 'test/**/*.test.ts'",
     "lint:check": "prettier --check {lib,bin,test}/**/*.ts",
     "lint:write": "prettier --check --write {lib,bin,test}/**/*.ts",
     "clean": "git clean -xdff -e node_modules",
@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@aws-cdk/assert": "^1.22.0",
-    "@types/chai": "^4.2.8",
+    "@types/chai": "^4.2.7",
     "@types/chai-as-promised": "^7.1.2",
     "@types/mocha": "^7.0.1",
     "@types/node": "13.7.0",
@@ -59,7 +59,9 @@
     "debug": "^4.1.1",
     "js-yaml": "^3.13.1",
     "lodash": "^4.17.15",
-    "nunjucks": "^3.2.0"
+    "nunjucks": "^3.2.0",
+    "@aws-cdk/aws-dynamodb": "^1.22.0",
+    "@aws-cdk/aws-rds": "^1.22.0"
   },
   "mocha": {
     "bail": true,

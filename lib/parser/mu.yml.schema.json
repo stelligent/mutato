@@ -15,6 +15,12 @@
         ".*": {
           "$ref": "#/definitions/mu_construct"
         }
+      },
+      "properties": {
+        "database": {
+          "type": "object",
+          "$ref": "#/definitions/database_construct"
+        }
       }
     }
   },
@@ -29,6 +35,27 @@
         }
       },
       "additionalProperties": true
+    },
+    "database_construct": {
+      "type": "object",
+      "description": "Provides an AWS database",
+      "required": ["provider"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Optional name for database construct"
+        },
+        "provider": {
+          "type": "string",
+          "description": "Required name for database service: RDS, DynamoDB, etc",
+          "enum": ["rds", "dynamodb"]
+        },
+        "engine": {
+          "type": "string",
+          "description": "Required name for database engine: MySQL, PostgreSQL, MSSQL, etc",
+          "enum": ["mysql", "postgres", "sqlserver"]
+        }
+      }
     }
   }
 }
