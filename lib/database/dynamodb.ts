@@ -1,19 +1,16 @@
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
-import { TableProps } from '@aws-cdk/aws-dynamodb';
 import { Construct } from '@aws-cdk/core';
 import { BaseConstruct } from '../base-construct';
 
 export interface MuDynamoDBProps {
-  readonly name?: string;
   readonly tableName?: string;
-  readonly tableProps?: TableProps;
   readonly readCapacity?: number;
   readonly writeCapacity?: number;
-  // readonly tableKeys?: Array<Object>;
+  readonly billingMode?: dynamodb.BillingMode;
 }
 
 /**
- *
+ * MuDynamoDB is a dynamo table with defaults that make sense
  */
 export class MuDynamoDB extends BaseConstruct {
   public table: dynamodb.Table;
@@ -25,10 +22,19 @@ export class MuDynamoDB extends BaseConstruct {
   constructor(scope: Construct, id: string, props: MuDynamoDBProps = {}) {
     super(scope, id);
 
-    this.table = new dynamodb.Table(scope, 'WAT', {
+    const defaults = {
+      tableName: id,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
-      readCapacity: 500,
-      writeCapacity: 50
-    });
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+    }
+    const combined = { ...defaults, ...props };
+    // Could be handled better. At minimum, set a custom Error
+    if (combined.readCapacity || combined.writeCapacity) {
+      if (combined.billingMode == dynamodb.BillingMode.PAY_PER_REQUEST) {
+        throw Error('You must set PROVISIONED billing mode when setting capacity')
+      }
+    }
+
+    this.table = new dynamodb.Table(this, id, combined);
   }
 }

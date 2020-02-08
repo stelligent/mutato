@@ -3,6 +3,7 @@
 // import * as fsx from 'fs-extra';
 // import * as _ from 'lodash';
 import { expect as expectCDK, haveResource } from '@aws-cdk/assert';
+import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as cdk from '@aws-cdk/core';
 import { MuDynamoDB } from '../../lib/database/dynamodb';
 import Mu = require('../../lib/mu-stack');
@@ -12,7 +13,7 @@ import Mu = require('../../lib/mu-stack');
 //   });
 // });
 
-describe('DynamoDB Module Tests', () => {
+describe('DynamoDB Module Tests', function () {
   describe.skip('DynamoDB Simple Configuration', () => {
     it('should create dynamodb stack', () => {
       const app = new cdk.App();
@@ -22,22 +23,18 @@ describe('DynamoDB Module Tests', () => {
     });
   });
 
-  describe('DynamoDB Custom Props', () => {
-    it('should create dynamodb stack with custom parameters', () => {
+  describe('DynamoDB Custom Props', function () {
+    it('should create dynamodb stack with custom parameters', function () {
       const myprops = {
         name: 'my_app',
         tableName: 'mytable',
         readCapacity: 10,
-        writeCapacity: 10
+        writeCapacity: 10,
+        billingMode: dynamodb.BillingMode.PROVISIONED,
       };
       const app = new cdk.App();
       const stack = new Mu.MuStack(app, 'MyTestStack');
-      const scott = new MuDynamoDB(stack, 'MuDyn', myprops);
-      // new dynamodb.Table(stack, 'WAT', {
-      //   partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
-      //   readCapacity: 500,
-      //   writeCapacity: 50
-      // });
+      new MuDynamoDB(stack, 'MuDyn', myprops);
 
       expectCDK(stack).to(
         haveResource('AWS::DynamoDB::Table', {
