@@ -1,5 +1,6 @@
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import { Construct } from '@aws-cdk/core';
+import { DynamoDBbillingModeError } from 'exceptions';
 import { BaseConstruct } from '../base-construct';
 
 export interface MuDynamoDBProps {
@@ -10,7 +11,7 @@ export interface MuDynamoDBProps {
 }
 
 /**
- * MuDynamoDB is a dynamo table with defaults that make sense
+ * MuDynamoDB is a dynamo table with defaults that make sense.
  */
 export class MuDynamoDB extends BaseConstruct {
   public table: dynamodb.Table;
@@ -25,13 +26,13 @@ export class MuDynamoDB extends BaseConstruct {
     const defaults = {
       tableName: id,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-    }
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST
+    };
     const combined = { ...defaults, ...props };
-    // Could be handled better. At minimum, set a custom Error
+    // If Provisioned mode properties are set, make usre the billingMode is correct.
     if (combined.readCapacity || combined.writeCapacity) {
       if (combined.billingMode == dynamodb.BillingMode.PAY_PER_REQUEST) {
-        throw Error('You must set PROVISIONED billing mode when setting capacity')
+        throw new DynamoDBbillingModeError();
       }
     }
 
