@@ -29,7 +29,7 @@ export class MuDynamoDB extends BaseConstruct {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST
     };
     const combined = { ...defaults, ...props };
-    // If Provisioned mode properties are set, make usre the billingMode is correct.
+    // If Provisioned mode properties are set, make sure the billingMode is correct.
     if (combined.readCapacity || combined.writeCapacity) {
       if (combined.billingMode == dynamodb.BillingMode.PAY_PER_REQUEST) {
         throw new DynamoDBbillingModeError();
