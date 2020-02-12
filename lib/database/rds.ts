@@ -1,69 +1,103 @@
-import * as ec2 from '@aws-cdk/aws-ec2';
-import * as rds from '@aws-cdk/aws-rds';
+import {
+  InstanceClass,
+  InstanceSize,
+  InstanceType,
+  Vpc
+} from '@aws-cdk/aws-ec2';
+import {
+  DatabaseCluster,
+  DatabaseClusterEngine,
+  DatabaseInstance,
+  DatabaseInstanceEngine,
+  InstanceProps,
+  Login
+} from '@aws-cdk/aws-rds';
 import { Construct } from '@aws-cdk/core';
+
+export interface MuRDSInstanceProps {
+  readonly engine: DatabaseInstanceEngine;
+  readonly instanceClass: InstanceType;
+  readonly masterUsername: string;
+  readonly vpc: Vpc;
+}
 
 /**
  * MuRDSInstance is a RDS Database Instance with sensible defaults.
  */
 export class MuRDSInstance extends Construct {
-  public instance = rds.DatabaseInstance;
+  public instance = DatabaseInstance;
+
   /**
    * @param scope
    * @param id
    * @param props
+   * @param user_props User passes optional properties.
    */
-  constructor(scope: Construct, id: string, props: rds.DatabaseInstanceProps) {
+  constructor(
+    scope: Construct,
+    id: string,
+    props: MuRDSInstanceProps,
+    user_props?: object
+  ) {
     super(scope, id);
 
     const defaults = {
-      engine: rds.DatabaseInstanceEngine.MYSQL,
-      instanceClass: ec2.InstanceType.of(
-        ec2.InstanceClass.BURSTABLE2,
-        ec2.InstanceSize.SMALL
+      engine: DatabaseInstanceEngine.MYSQL,
+      instanceClass: InstanceType.of(
+        InstanceClass.BURSTABLE2,
+        InstanceSize.SMALL
       ),
       masterUsername: 'syscdk',
       vpc: props.vpc
     };
 
-    const combined = { ...defaults, ...props };
+    const combined = { ...defaults, ...user_props, ...props };
 
-    new rds.DatabaseInstance(this, id, combined);
+    new DatabaseInstance(this, id, combined);
   }
 }
 
-// export interface MuRDSClusterProps extends rds.DatabaseClusterProps {
-//   readonly myvpc: ec2.Vpc;
-// }
+export interface MuRDSClusterProps {
+  readonly engine: DatabaseClusterEngine;
+  readonly instanceProps: InstanceProps;
+  readonly masterUser: Login;
+}
 
 /**
  * MuRDSCluster is a RDS Database Cluster with sensible defaults.
  */
 export class MuRDSCluster extends Construct {
-  public instance = rds.DatabaseCluster;
+  public instance = DatabaseCluster;
   /**
    * @param scope
    * @param id
    * @param props
+   * @param user_props User passes optional properties.
    */
-  constructor(scope: Construct, id: string, props: rds.DatabaseClusterProps) {
+  constructor(
+    scope: Construct,
+    id: string,
+    props: MuRDSClusterProps,
+    user_props?: object
+  ) {
     super(scope, id);
 
-    const myvpc = new ec2.Vpc(this, 'ClusterVPC', {});
+    const myvpc = new Vpc(this, 'ClusterVPC', {});
 
     const defaults = {
-      engine: rds.DatabaseClusterEngine.AURORA,
+      engine: DatabaseClusterEngine.AURORA,
       instanceProps: {
-        instanceClass: ec2.InstanceType.of(
-          ec2.InstanceClass.BURSTABLE2,
-          ec2.InstanceSize.SMALL
+        instanceClass: InstanceType.of(
+          InstanceClass.BURSTABLE2,
+          InstanceSize.SMALL
         ),
         vpc: myvpc
       },
       masterUser: { username: 'syscdk' }
     };
 
-    const combined = { ...defaults, ...props };
+    const combined = { ...defaults, ...user_props, ...props };
 
-    new rds.DatabaseCluster(this, id, combined);
+    new DatabaseCluster(this, id, combined);
   }
 }
