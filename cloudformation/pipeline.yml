@@ -38,6 +38,7 @@ Resources:
       ServiceRole: !GetAtt CodePipelineCodeBuildRole.Arn
       Artifacts:
         Type: CODEPIPELINE
+      BadgeEnabled: false
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: docker.io/node:latest
@@ -66,6 +67,7 @@ Resources:
                 Branch: !Ref GithubBranch
                 OAuthToken: !Ref OauthToken
               Name: SourceAction
+              Namespace: Github
               OutputArtifacts:
                 - Name: repo
               RunOrder: 1
@@ -77,6 +79,11 @@ Resources:
                 Provider: CodeBuild
                 Version: '1'
               Configuration:
+                EnvironmentVariables:
+                  !Sub '[{"name": "gitBranch", "type": "PLAINTEXT", "value": "#{Github.BranchName}"},
+                  {"name": "gitCommit", "type": "PLAINTEXT", "value": "#{Github.CommitId}"},
+                  {"name": "gitRepo", "type": "PLAINTEXT", "value": "#{Github.RepositoryName}"},
+                  {"name": "gitOwner", "type": "PLAINTEXT", "value": "${GithubOwner}"}]'
                 ProjectName: !Ref CodeBuildProject
                 PrimarySource: repo
               Name: BuildAction
@@ -130,10 +137,12 @@ Resources:
                   - cloudformation:DescribeStacks
                   - s3:Get*
                   - s3:List*
+                  - secretsmanager:GetSecretValue
                 Resource:
                   - !GetAtt ArtifactBucket.Arn
                   - !Sub arn:${AWS::Partition}:codebuild
                   - !Sub arn:${AWS::Partition}:s3:::${ArtifactBucket}/*
+                  - !Ref CodebuildGitAccessSecret
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -164,3 +173,9 @@ Resources:
       Type: String
       Value: !Ref CodeBuildProject
       Description: Name of the Codebuild Project for Mutato
+  CodebuildGitAccessSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: mutato/ssh
+      Description: Shhh, Release
+      SecretString: '{"key":"Secret"}'
