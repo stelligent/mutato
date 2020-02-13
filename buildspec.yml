@@ -8,19 +8,22 @@ phases:
   install:
     commands:
       - mkdir -p ~/.ssh
-      - echo -e "$key" > ~/.ssh/id_rsa
+      - echo "$key" > ~/.ssh/id_rsa
       - chmod 600 ~/.ssh/id_rsa
       - ssh-keygen -F github.com || ssh-keyscan github.com >>~/.ssh/known_hosts
       - git config --global url."git@github.com:".insteadOf "https://github.com/"
       - git init
       - git remote add origin "git@github.com:${gitOwner}/${gitRepo}.git"
+      - git fetch origin
       - git clean -d  -f .
       - git checkout -f "origin/${gitBranch}"
       - git reset --hard "${gitCommit}"
   build:
     commands:
-      - npm install test
+      - npm install
+      - npm test
       - npm run-script docs
+      - git add -f docs/*
       - git mv docs/* ./
       - git commit -am '[ci] - Deploy docs'
       - git push -f origin gh-pages
