@@ -9,6 +9,18 @@
       "args": ["--timeout", "0", "--colors", "${file}"],
       "internalConsoleOptions": "openOnSessionStart",
       "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug EntryPoint",
+      "program": "${workspaceFolder}/bin/mu.ts",
+      "preLaunchTask": "tsc: build - tsconfig.json",
+      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "skipFiles": ["<node_internals>/**"],
+      "cwd": "${workspaceFolder}",
+      "env": { "DEBUG": "mu*" },
+      "console": "integratedTerminal"
     }
   ]
 }
