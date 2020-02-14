@@ -62,7 +62,7 @@ async function main(): Promise<void> {
           commands: ['npm install']
         },
         build: {
-          commands: ['npm run build', 'npm run cdk synth -- -o dist']
+          commands: ['npx cdk synth -- -o dist']
         }
       },
       artifacts: {
