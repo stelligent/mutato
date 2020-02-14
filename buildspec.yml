@@ -12,6 +12,8 @@ phases:
       - chmod 600 ~/.ssh/id_rsa
       - ssh-keygen -F github.com || ssh-keyscan github.com >>~/.ssh/known_hosts
       - git config --global url."git@github.com:".insteadOf "https://github.com/"
+      - git config --global user.email "mutato_codebuild_aws@stelligent.com"
+      - git config --global user.name "AWS_CodeBuild_Mutato"
       - git init
       - git remote add origin "git@github.com:${gitOwner}/${gitRepo}.git"
       - git fetch origin
@@ -26,8 +28,8 @@ phases:
       - git add -f docs/*
       - git mv docs/* ./
       - git commit -am '[ci] - Deploy docs'
-      - git push -f origin gh-pages
+      - git push -f origin HEAD:gh-pages
   post_build:
     commands:
       - echo 'Run integration tests'
-      - echo "Don't for get to store artifacts"
+      - echo "Don't forget to store artifacts"
