@@ -17,7 +17,7 @@ const log = debug('mu');
 async function main(): Promise<void> {
   const app = new cdk.App();
 
-  const pipelineStack = new cdk.Stack(app, 'PipelineStack');
+  const pipelineStack = new cdk.Stack(app, 'MuPipeline');
   const pipeline = new codePipeline.Pipeline(pipelineStack, 'CodePipeline', {
     restartExecutionOnUpdate: true
   });
@@ -93,7 +93,7 @@ async function main(): Promise<void> {
   );
 
   const deployStage = pipeline.addStage({ stageName: 'Mu-Deploy' });
-  const muStack = new MuStack(app, 'ServiceStackA', {
+  const muStack = new MuStack(app, 'MuStack', {
     description: 'Mu managed micro-service'
   });
   await muStack.fromFile();
