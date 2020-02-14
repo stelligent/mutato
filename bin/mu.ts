@@ -34,7 +34,7 @@ async function main(): Promise<void> {
     actionName: 'GitHub',
     output: sourceOutput,
     owner: params?.owner as string,
-    repo: params?.repo as string,
+    repo: params?.name as string,
     branch,
     oauthToken: process.env.GITHUB_TOKEN
       ? cdk.SecretValue.plainText(process.env.GITHUB_TOKEN)
