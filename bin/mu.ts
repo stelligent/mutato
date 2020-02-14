@@ -47,7 +47,13 @@ async function main(): Promise<void> {
 
   const project = new codeBuild.PipelineProject(pipelineStack, 'CodeBuild', {
     environment: {
-      buildImage: codeBuild.LinuxBuildImage.fromDockerRegistry('node:lts')
+      buildImage: codeBuild.LinuxBuildImage.fromDockerRegistry('node:lts'),
+      environmentVariables: {
+        GITHUB_TOKEN: {
+          type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
+          value: process.env.GITHUB_TOKEN // fixme
+        }
+      }
     },
     buildSpec: codeBuild.BuildSpec.fromObject({
       version: 0.2,
