@@ -52,6 +52,10 @@ async function main(): Promise<void> {
         GITHUB_TOKEN: {
           type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
           value: process.env.GITHUB_TOKEN // fixme
+        },
+        DEBUG: {
+          type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
+          value: 'mu*'
         }
       }
     },
