@@ -6,7 +6,7 @@ import Mu = require('../../lib/mu-stack');
 
 describe('DynamoDB Module Tests', function() {
   describe('DynamoDB Simple Configuration', () => {
-    it('should create dynamodb stack with default values', () => {
+    it('should create stack with default values', () => {
       const app = new cdk.App();
       const stack = new Mu.MuStack(app, 'MyTestStack');
       const table_name = 'MuDyn';
@@ -33,7 +33,7 @@ describe('DynamoDB Module Tests', function() {
   });
 
   describe('DynamoDB Custom Props', function() {
-    it('should create dynamodb stack with custom parameters', function() {
+    it('should create stack with custom parameters', function() {
       const myprops = {
         name: 'my_app',
         tableName: 'mytable',
