@@ -2,9 +2,9 @@ import { expect as expectCDK, haveResource } from '@aws-cdk/assert';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import { Vpc } from '@aws-cdk/aws-ec2';
 import * as cdk from '@aws-cdk/core';
-import { RemovalPolicy } from '@aws-cdk/core';
 import { Database, DatabaseProps } from '../../lib/database/database';
 import { MuDynamoDBProps } from '../../lib/database/dynamodb';
+import { MuRDSServerlessProps } from '../../lib/database/rds';
 import Mu = require('../../lib/mu-stack');
 
 describe('Database Module Tests', function() {
@@ -22,9 +22,7 @@ describe('Database Module Tests', function() {
         billingMode: dynamodb.BillingMode.PROVISIONED
       };
 
-      const user_props: object = {
-        removalPolicy: RemovalPolicy.DESTROY
-      };
+      const user_props = {};
 
       const combined = { ...props, ...user_props };
 
@@ -49,6 +47,39 @@ describe('Database Module Tests', function() {
             ReadCapacityUnits: props.readCapacity,
             WriteCapacityUnits: props.writeCapacity
           }
+        })
+      );
+    });
+
+    it('should create serverless database stack ', () => {
+      const app = new cdk.App();
+      const stack = new Mu.MuStack(app, 'TestServerlessDBStack');
+      const vpc = new Vpc(stack, 'ServerlessDatabaseVPC');
+      const database_name = 'MyServerlessDB';
+
+      const props: MuRDSServerlessProps = {
+        engine: 'aurora-mysql'
+      };
+
+      const user_props = {
+        dbClusterIdentifier: 'MuAuroraMySQL',
+        engineMode: 'serverless'
+      };
+
+      const combined = { ...props, ...user_props };
+
+      const database_props: DatabaseProps = {
+        alias: 'rds-serverless',
+        config: combined
+      };
+
+      new Database(stack, database_name, database_props);
+
+      expectCDK(stack).to(
+        haveResource('AWS::RDS::DBCluster', {
+          DBClusterIdentifier: user_props.dbClusterIdentifier,
+          EngineMode: user_props.engineMode,
+          Engine: props.engine
         })
       );
     });

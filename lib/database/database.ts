@@ -17,7 +17,11 @@ export interface DatabaseProps {
   //   | MuRDSInstance
   //   | MuRDSCluster
   //   | MuRDSServerless;
-  readonly config: MuDynamoDBProps | MuRDSInstanceProps;
+  readonly config:
+    | MuDynamoDBProps
+    | MuRDSInstanceProps
+    | MuRDSClusterProps
+    | MuRDSServerlessProps;
   readonly user_props?: object;
 }
 /**
