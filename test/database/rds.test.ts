@@ -14,7 +14,9 @@ import {
   MuRDSCluster,
   MuRDSClusterProps,
   MuRDSInstance,
-  MuRDSInstanceProps
+  MuRDSInstanceProps,
+  MuRDSServerless,
+  MuRDSServerlessProps
 } from '../../lib/database/rds';
 import Mu = require('../../lib/mu-stack');
 
@@ -124,6 +126,65 @@ describe('RDS Module Tests', function() {
         haveResource('AWS::RDS::DBCluster', {
           Engine: 'aurora',
           Port: 5700
+        })
+      );
+    });
+  });
+
+  describe('RDS Serverless Tests', () => {
+    it('should create serverless stack with default values', () => {
+      const app = new cdk.App();
+      const stack = new Mu.MuStack(app, 'TestRDS-Serverless-Stack');
+      const vpc = new Vpc(stack, 'RDSServerlessVPC');
+      const table_name = 'MuRDSServerless';
+
+      const custom_props: MuRDSServerlessProps = {
+        engine: 'aurora'
+      };
+
+      new MuRDSServerless(stack, table_name, custom_props);
+
+      expectCDK(stack).to(
+        haveResource('AWS::RDS::DBCluster', {
+          Engine: 'aurora'
+        })
+      );
+    });
+    it('should create serverless stack with custom values', () => {
+      const app = new cdk.App();
+      const stack = new Mu.MuStack(app, 'TestRDS-Serverless-Stack');
+      const vpc = new Vpc(stack, 'RDSServerlessVPC');
+      const table_name = 'MuRDSServerless';
+
+      const custom_props: MuRDSServerlessProps = {
+        engine: 'aurora-postgresql'
+      };
+
+      const user_props = {
+        dbClusterIdentifier: 'myMuServerlessCluster',
+        engineMode: 'serverless',
+        databaseName: 'myMuPostgres',
+        scalingConfiguration: {
+          autoPause: true,
+          maxCapacity: 10,
+          minCapacity: 2,
+          secondsUntilAutoPause: 3600
+        }
+      };
+
+      new MuRDSServerless(stack, table_name, custom_props, user_props);
+
+      expectCDK(stack).to(
+        haveResource('AWS::RDS::DBCluster', {
+          DBClusterIdentifier: user_props.dbClusterIdentifier,
+          EngineMode: user_props.engineMode,
+          Engine: custom_props.engine,
+          ScalingConfiguration: {
+            AutoPause: true,
+            MaxCapacity: 10,
+            MinCapacity: 2,
+            SecondsUntilAutoPause: 3600
+          }
         })
       );
     });

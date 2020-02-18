@@ -2,9 +2,12 @@ import {
   InstanceClass,
   InstanceSize,
   InstanceType,
+  SubnetType,
   Vpc
 } from '@aws-cdk/aws-ec2';
 import {
+  CfnDBCluster,
+  CfnDBSubnetGroup,
   DatabaseCluster,
   DatabaseClusterEngine,
   DatabaseInstance,
@@ -12,7 +15,7 @@ import {
   InstanceProps,
   Login
 } from '@aws-cdk/aws-rds';
-import { Construct } from '@aws-cdk/core';
+import { Construct, Stack } from '@aws-cdk/core';
 
 export interface MuRDSInstanceProps {
   readonly engine: DatabaseInstanceEngine;
@@ -99,5 +102,79 @@ export class MuRDSCluster extends Construct {
     const combined = { ...defaults, ...user_props, ...props };
 
     new DatabaseCluster(this, id, combined);
+  }
+}
+
+export interface MuRDSServerlessProps {
+  readonly engine: string;
+}
+
+/**
+ * MuRDSServerless is a RDS Serverless Cluster with sensible defaults.
+ */
+export class MuRDSServerless extends Construct {
+  public instance = DatabaseCluster;
+  /**
+   * @param scope
+   * @param id
+   * @param props
+   * @param user_props User passes optional properties.
+   */
+  constructor(
+    scope: Construct,
+    id: string,
+    props: MuRDSServerlessProps,
+    user_props?: object
+  ) {
+    super(scope, id);
+
+    const vpc = new Vpc(this, 'ServerlessVPC', {
+      subnetConfiguration: [
+        { name: 'aurora_isolated_', subnetType: SubnetType.ISOLATED }
+      ]
+    });
+
+    const stack = Stack.of(this);
+    stack.account;
+
+    // Requires a VPC
+    // Would fail if there isn't private subnets
+    const subnetIds: string[] = [];
+    vpc.privateSubnets.forEach((subnet, index) => {
+      subnetIds.push(subnet.subnetId);
+    });
+
+    // Would fail due to missing subnetIds if there isn't subnets
+    const dbSubnetGroup: CfnDBSubnetGroup = new CfnDBSubnetGroup(
+      this,
+      'AuroraSubnetGroup',
+      {
+        dbSubnetGroupDescription: 'Subnet group to access aurora',
+        dbSubnetGroupName: 'aurora-serverless-subnet',
+        subnetIds
+      }
+    );
+
+    const defaults = {
+      dbClusterIdentifier: 'aurora-serverless',
+      engine: 'aurora',
+      engineMode: 'serverless',
+      masterUsername: 'masteruser',
+      masterUserPassword: '###########',
+      dbSubnetGroupName: dbSubnetGroup.dbSubnetGroupName, // Would fail due missing values in this param
+      scalingConfiguration: {
+        autoPause: true,
+        maxCapacity: 4,
+        minCapacity: 2,
+        secondsUntilAutoPause: 3600
+      }
+    };
+
+    const combined = { ...defaults, ...user_props, ...props };
+
+    const aurora = new CfnDBCluster(this, id, combined);
+
+    //wait for subnet group to be created
+    aurora.addDependsOn(dbSubnetGroup);
   }
 }
