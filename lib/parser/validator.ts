@@ -1,8 +1,7 @@
 import * as ajv from 'ajv';
 import * as debug from 'debug';
-import * as fs from 'fs';
-import * as path from 'path';
 import * as px from './exceptions';
+import * as muSchema from './mu.yml.schema.json';
 
 const log = debug('mu:parser:Validator');
 
@@ -19,13 +18,7 @@ export class Validator {
   constructor() {
     this.ajv = new ajv({ allErrors: true });
     try {
-      this.validator = this.ajv.compile(
-        JSON.parse(
-          fs.readFileSync(path.resolve(__dirname, 'mu.yml.schema.json'), {
-            encoding: 'utf-8'
-          })
-        )
-      );
+      this.validator = this.ajv.compile(muSchema);
     } catch (err) {
       log('invalid mu.yml schema! this is fatal: %o', err);
       throw new px.InvalidMuSchemaError();

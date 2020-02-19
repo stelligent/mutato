@@ -95,28 +95,6 @@ describe('Parser Module Tests', () => {
         });
       });
     });
-
-    describe('fault tolerance when schema is missing', () => {
-      before(async () => {
-        await fs.rename(
-          path.resolve(__dirname, '../lib/parser/mu.yml.schema.json'),
-          path.resolve(__dirname, '../lib/parser/mu.yml.schema.json.bak')
-        );
-      });
-
-      it('should throw an error if there is something wrong with the schema', () => {
-        chai.assert.throws(() => {
-          new Validator();
-        }, px.InvalidMuSchemaError);
-      });
-
-      after(async () => {
-        await fs.rename(
-          path.resolve(__dirname, '../lib/parser/mu.yml.schema.json.bak'),
-          path.resolve(__dirname, '../lib/parser/mu.yml.schema.json')
-        );
-      });
-    });
   });
 
   describe('Converter class tests', () => {

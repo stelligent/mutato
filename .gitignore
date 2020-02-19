@@ -177,3 +177,6 @@ temp/
 .history
 
 # End of https://www.gitignore.io/api/node,linux,macos,visualstudiocode,typescript
+
+# TSC artifacts
+out

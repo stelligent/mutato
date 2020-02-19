@@ -1,0 +1,4 @@
+mu:
+  network:
+    vpc:
+      maxAZs: 1
