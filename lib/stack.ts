@@ -89,12 +89,7 @@ export class MuPipeline extends cdk.Stack {
     super(scope, id, props);
     this.app = props.app;
     this.log = debug(`mu:Stack:${id}`);
-  }
 
-  /**
-   * synthesizes the pipeline stack
-   */
-  async initialize(): Promise<void> {
     this.log('synthesizing Mu pipeline');
     const pipeline = new codePipeline.Pipeline(this, 'MuPipeline', {
       restartExecutionOnUpdate: true
