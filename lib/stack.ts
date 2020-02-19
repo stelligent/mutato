@@ -103,7 +103,7 @@ export class MuPipeline extends cdk.Stack {
     this.log('attempting to extract local Github metadata');
     const params = parseGithubUrl(config.opts.git.remote);
     const branch = config.opts.git.branch;
-    this.log('deploying the branch "%s" in repository: %o', params);
+    this.log('deploying the branch "%s" in repository: %o', branch, params);
 
     /** @todo properly handle non Github repositories */
     assert.ok(params != null && params.owner && params.repo);
