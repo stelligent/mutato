@@ -149,7 +149,7 @@ export class MuPipeline extends cdk.Stack {
             commands: ['npm install']
           },
           build: {
-            commands: ['npx cdk synth -- -o dist']
+            commands: ['npx cdk synth -o dist']
           }
         },
         artifacts: {
