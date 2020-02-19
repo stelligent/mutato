@@ -8,7 +8,7 @@ import * as debug from 'debug';
 import * as _ from 'lodash';
 import * as parseGithubUrl from 'parse-github-url';
 import * as path from 'path';
-import { config } from './config';
+import { config, flatten as flattenedConfig } from './config';
 import { Parser } from './parser';
 import { Registry } from './registry';
 
@@ -94,7 +94,7 @@ export class MuPipeline extends cdk.Stack {
   /**
    * synthesizes the pipeline stack
    */
-  async initialize(): Promise<void> {
+  initialize(): void {
     this.log('synthesizing Mu pipeline');
     const pipeline = new codePipeline.Pipeline(this, 'MuPipeline', {
       restartExecutionOnUpdate: true
@@ -107,8 +107,6 @@ export class MuPipeline extends cdk.Stack {
 
     /** @todo properly handle non Github repositories */
     assert.ok(params != null && params.owner && params.repo);
-    /** @todo properly handle nonexistent GITHUB_TOKEN */
-    assert.ok(process.env.GITHUB_TOKEN);
 
     const sourceOutput = new codePipeline.Artifact();
     const source = new codePipelineActions.GitHubSourceAction({
@@ -127,19 +125,21 @@ export class MuPipeline extends cdk.Stack {
       actions: [source]
     });
 
+    const wrapVal = (value: string): codeBuild.BuildEnvironmentVariable => {
+      return { type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT, value };
+    };
+
+    this.log('forwarding configuration to CodeBuild: %o', flattenedConfig);
+    const wrappedFlattenedConfig = _.mapValues(flattenedConfig, wrapVal);
+
     const project = new codeBuild.PipelineProject(this, 'CodeBuild', {
       environment: {
         buildImage: codeBuild.LinuxBuildImage.fromDockerRegistry('node:lts'),
         environmentVariables: {
-          GITHUB_TOKEN: {
-            type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-            /** @todo add SSM here to read github token from */
-            value: process.env.GITHUB_TOKEN
-          },
-          DEBUG: {
-            type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-            value: 'mu*'
-          }
+          DEBUG: wrapVal('mu*'),
+          // propagate this machine's configuration into CodeBuild since Git
+          // metadata and other utilities are unavailable in that environment
+          ...wrappedFlattenedConfig
         }
       },
       buildSpec: codeBuild.BuildSpec.fromObject({
