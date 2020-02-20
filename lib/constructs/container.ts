@@ -76,7 +76,7 @@ class Container extends BaseConstruct {
       this.props.buildArgs,
       (accumulate, value, key) => `${accumulate} --build-arg ${key}="${value}"`,
       ''
-    );
+    ).trim();
     const f = this.props.file;
     const t = this.imageUri;
     return `docker build ${buildArg} -t ${t} -f ${f} ${context}`;
