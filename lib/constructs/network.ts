@@ -2,7 +2,7 @@ import * as ec2 from '@aws-cdk/aws-ec2';
 import * as ecs from '@aws-cdk/aws-ecs';
 import * as cdk from '@aws-cdk/core';
 import * as debug from 'debug';
-import { BaseConstruct, IInfraConstruct } from './interfaces';
+import { BaseConstruct } from './interfaces';
 
 interface NetworkConfiguration {
   vpc?: ec2.VpcProps;
@@ -10,7 +10,7 @@ interface NetworkConfiguration {
 }
 
 /** Base infra construct interface */
-class Network extends BaseConstruct implements IInfraConstruct {
+class Network extends BaseConstruct {
   public readonly vpc: ec2.Vpc;
   public readonly cluster: ecs.Cluster;
   private readonly log: debug.Debugger;
