@@ -113,7 +113,7 @@
     "root": true,
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
-      "project": "./tsconfig.json"
+      "project": "tsconfig.json"
     },
     "plugins": [
       "@typescript-eslint",
@@ -121,10 +121,10 @@
       "jsdoc"
     ],
     "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/eslint-recommended",
       "plugin:@typescript-eslint/recommended",
-      "plugin:@typescript-eslint/recommended-requiring-type-checking",
-      "plugin:jsdoc/recommended",
-      "prettier"
+      "prettier/@typescript-eslint"
     ],
     "rules": {
       "jsdoc/require-jsdoc": [
