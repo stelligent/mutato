@@ -16,7 +16,7 @@ import {
   InstanceProps,
   Login
 } from '@aws-cdk/aws-rds';
-import { SecretRotationApplication } from '@aws-cdk/aws-secretsmanager';
+import { CfnSecretTargetAttachment } from '@aws-cdk/aws-secretsmanager';
 import { Construct, Stack } from '@aws-cdk/core';
 
 export interface MuRDSInstanceProps {
@@ -176,6 +176,12 @@ export class MuRDSServerless extends Construct {
     const combined = { ...defaults, ...user_props, ...props };
 
     const aurora = new CfnDBCluster(this, id, combined);
+
+    new CfnSecretTargetAttachment(this, 'AttachSecret', {
+      targetType: 'AWS::RDS::DBCluster',
+      secretId: secret.secretArn,
+      targetId: aurora.ref
+    });
 
     //wait for subnet group to be created
     aurora.addDependsOn(dbSubnetGroup);
