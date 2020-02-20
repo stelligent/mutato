@@ -17,7 +17,7 @@ import {
   Login
 } from '@aws-cdk/aws-rds';
 import { CfnSecretTargetAttachment } from '@aws-cdk/aws-secretsmanager';
-import { Construct, Stack } from '@aws-cdk/core';
+import { Construct } from '@aws-cdk/core';
 
 export interface MuRDSInstanceProps {
   readonly engine: DatabaseInstanceEngine;
@@ -112,7 +112,6 @@ export interface MuRDSServerlessProps {
  * MuRDSServerless is a RDS Serverless Cluster with sensible defaults.
  */
 export class MuRDSServerless extends Construct {
-  public secretRotationApplication: SecretRotationApplication;
   /**
    * @param scope
    * @param id
@@ -129,12 +128,9 @@ export class MuRDSServerless extends Construct {
 
     const vpc = new Vpc(this, 'ServerlessVPC', {
       subnetConfiguration: [
-        { name: 'aurora_isolated_', subnetType: SubnetType.ISOLATED }
+        { name: 'aurora_private_', subnetType: SubnetType.PRIVATE }
       ]
     });
-
-    const stack = Stack.of(this);
-    stack.account;
 
     // Requires a VPC
     // Would fail if there isn't private subnets
@@ -154,6 +150,7 @@ export class MuRDSServerless extends Construct {
       }
     );
 
+    // Creates a database username and password in Secrets Manager.
     const secret = new DatabaseSecret(this, 'MuServerless', {
       username: 'syscdk'
     });
@@ -177,6 +174,9 @@ export class MuRDSServerless extends Construct {
 
     const aurora = new CfnDBCluster(this, id, combined);
 
+    /**  The attachment adds additional information to the Secret
+     *    such as dbname, engine, host, and port.
+     */
     new CfnSecretTargetAttachment(this, 'AttachSecret', {
       targetType: 'AWS::RDS::DBCluster',
       secretId: secret.secretArn,
