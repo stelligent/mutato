@@ -2,11 +2,8 @@ import * as ecr from '@aws-cdk/aws-ecr';
 import * as cdk from '@aws-cdk/core';
 import * as assert from 'assert';
 import * as debug from 'debug';
-import * as fs from 'fs';
 import * as _ from 'lodash';
 import { BaseConstruct } from './interfaces';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const drc = require('docker-registry-client');
 
 interface ContainerProps {
   /** build time parameters passed to "docker build" */
@@ -46,10 +43,7 @@ class Container extends BaseConstruct {
     assert.ok(this.props.context);
     assert.ok(_.isString(this.props.tag));
 
-    const repo = drc.parseRepoAndTag(this.props.tag);
-    this.log('parsed repository info: %o', repo);
-
-    if ('docker.io' === _.get(repo, 'index.name', '')) {
+    if (this.props.tag) {
       this.log('container is building for DockerHub');
     } else {
       this.log('container is building for AWS ECR');
