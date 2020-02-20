@@ -77,7 +77,7 @@ class Container extends BaseConstruct {
     const f = this.props.file;
     const t = this.imageUri;
     // TODO: escape for shell args here to prevent shell attacks
-    return `docker build ${buildArg} -t ${t} -f ${f} ${context}`;
+    return `docker build ${buildArg} -t ${t} -f ${f} ${this.props.context}`;
   }
 
   /** @returns {string} shell command containing "docker push" */
