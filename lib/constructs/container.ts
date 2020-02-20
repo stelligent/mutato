@@ -9,14 +9,19 @@ import { BaseConstruct } from './interfaces';
 const drc = require('docker-registry-client');
 
 interface ContainerProps {
+  /** build time parameters passed to "docker build" */
   buildArgs?: { [key: string]: string };
+  /** path to Dockerfile (default: Dockerfile) */
   file?: string;
+  /** path to build context (default: current working directory) */
   context?: string;
+  /** image's push tag. leave empty if using AWS ECR */
   tag?: string;
 }
 
 /**
- *
+ * a construct abstracting a single Dockerfile. This class does not participate
+ * in authentication, building, or pushing the actual image of the container.
  */
 class Container extends BaseConstruct {
   public readonly props: ContainerProps;
@@ -24,12 +29,7 @@ class Container extends BaseConstruct {
   public readonly imageUri: string;
   private readonly log: debug.Debugger;
 
-  /**
-   * @hideconstructor
-   * @param {cdk.Construct} scope CDK scope
-   * @param {string} id construct ID
-   * @param {ContainerProps?} props construct options
-   */
+  /** @hideconstructor */
   constructor(scope: cdk.Construct, id: string, props?: ContainerProps) {
     super(scope, id);
 
@@ -79,6 +79,7 @@ class Container extends BaseConstruct {
     ).trim();
     const f = this.props.file;
     const t = this.imageUri;
+    // TODO: escape for shell args here to prevent shell attacks
     return `docker build ${buildArg} -t ${t} -f ${f} ${context}`;
   }
 
