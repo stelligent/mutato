@@ -12,9 +12,11 @@ import {
   DatabaseClusterEngine,
   DatabaseInstance,
   DatabaseInstanceEngine,
+  DatabaseSecret,
   InstanceProps,
   Login
 } from '@aws-cdk/aws-rds';
+import { SecretRotationApplication } from '@aws-cdk/aws-secretsmanager';
 import { Construct, Stack } from '@aws-cdk/core';
 
 export interface MuRDSInstanceProps {
@@ -28,8 +30,6 @@ export interface MuRDSInstanceProps {
  * MuRDSInstance is a RDS Database Instance with sensible defaults.
  */
 export class MuRDSInstance extends Construct {
-  public instance = DatabaseInstance;
-
   /**
    * @param scope
    * @param id
@@ -70,7 +70,6 @@ export interface MuRDSClusterProps {
  * MuRDSCluster is a RDS Database Cluster with sensible defaults.
  */
 export class MuRDSCluster extends Construct {
-  public instance = DatabaseCluster;
   /**
    * @param scope
    * @param id
@@ -113,7 +112,7 @@ export interface MuRDSServerlessProps {
  * MuRDSServerless is a RDS Serverless Cluster with sensible defaults.
  */
 export class MuRDSServerless extends Construct {
-  public instance = DatabaseCluster;
+  public secretRotationApplication: SecretRotationApplication;
   /**
    * @param scope
    * @param id
@@ -155,12 +154,16 @@ export class MuRDSServerless extends Construct {
       }
     );
 
+    const secret = new DatabaseSecret(this, 'MuServerless', {
+      username: 'syscdk'
+    });
+
     const defaults = {
       dbClusterIdentifier: 'aurora-serverless',
       engine: 'aurora',
       engineMode: 'serverless',
-      masterUsername: 'masteruser',
-      masterUserPassword: '###########',
+      masterUsername: secret.secretValueFromJson('username').toString(),
+      masterUserPassword: secret.secretValueFromJson('password').toString(),
       dbSubnetGroupName: dbSubnetGroup.dbSubnetGroupName, // Would fail due missing values in this param
       scalingConfiguration: {
         autoPause: true,

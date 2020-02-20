@@ -69,6 +69,7 @@ describe('RDS Module Tests', function() {
           AutoMinorVersionUpgrade: false
         })
       );
+      expectCDK(stack).to(haveResource('AWS::EC2::VPC', {}));
     });
   });
 
@@ -184,6 +185,16 @@ describe('RDS Module Tests', function() {
             MaxCapacity: 10,
             MinCapacity: 2,
             SecondsUntilAutoPause: 3600
+          }
+        })
+      );
+      expectCDK(stack).to(
+        haveResource('AWS::SecretsManager::Secret', {
+          GenerateSecretString: {
+            ExcludeCharacters: '"@/\\',
+            GenerateStringKey: 'password',
+            PasswordLength: 30,
+            SecretStringTemplate: '{"username":"syscdk"}'
           }
         })
       );
