@@ -65,9 +65,6 @@ class Container extends BaseConstruct {
     assert.ok(this.props.tag);
     this.imageUri = this.props.tag as string;
     this.log('container image URI for runtime is set to: %s', this.imageUri);
-
-    assert.ok(fs.existsSync(this.props.file as string));
-    assert.ok(fs.existsSync(this.props.context as string));
   }
 
   /** @returns {string} shell command containing "docker build" */
