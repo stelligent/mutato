@@ -13,7 +13,7 @@
   "scripts": {
     "build": "npm-run-all lint:check compile",
     "compile": "tsc",
-    "test": "nyc mocha test/**/*.test.ts",
+    "test": "npm run build && nyc mocha test/**/*.test.ts",
     "lint:check": "prettier --check {lib,bin,test}/**/*.ts",
     "lint:write": "prettier --check --write {lib,bin,test}/**/*.ts",
     "clean": "git clean -xdff -e node_modules",
@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "@aws-cdk/assert": "^1.25.0",
+    "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@types/chai": "^4.2.9",
     "@types/chai-as-promised": "^7.1.2",
     "@types/mocha": "^7.0.1",
@@ -86,16 +87,7 @@
     ]
   },
   "nyc": {
-    "extension": [
-      ".ts",
-      ".tsx"
-    ],
-    "exclude": [
-      "**/*.d.ts",
-      "coverage",
-      "test",
-      "bin"
-    ],
+    "extends": "@istanbuljs/nyc-config-typescript",
     "reporter": [
       "html",
       "text-summary"
