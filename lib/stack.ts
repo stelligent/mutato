@@ -121,7 +121,7 @@ export class MuApp extends cdk.Stack {
       const wrappedFlattenedConfig = _.mapValues(flattenedConfig, wrapVal);
 
       const buildActions: codePipeline.IAction[] = [];
-      for(let i = 0; i < containers.length; ++i) {
+      for (let i = 0; i < containers.length; ++i) {
         const containerProps = containers[i];
         const containerConstruct = new container(
           this,
@@ -130,7 +130,7 @@ export class MuApp extends cdk.Stack {
           containerProps
         );
         await containerConstruct.initialize();
-        
+
         const project = new codeBuild.PipelineProject(
           this,
           // TODO fixme
@@ -171,7 +171,7 @@ export class MuApp extends cdk.Stack {
         if (containerConstruct.repo)
           containerConstruct.repo.grantPullPush(project);
         buildActions.push(buildAction);
-      });
+      }
 
       pipeline.addStage({
         stageName: 'Mu-Build',
