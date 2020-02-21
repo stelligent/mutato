@@ -31,9 +31,7 @@ describe('Container Construct Tests', () => {
       chai.assert.equal(construct.imageUri, 'stelligent/mu');
       chai
         .expect(construct.buildCommand)
-        .to.be.equal(
-          `docker build  -t stelligent/mu -f Dockerfile ${process.cwd()}`
-        );
+        .to.be.equal(`docker build  -t stelligent/mu -f Dockerfile .`);
       const construct2 = new container(stack, 'MyTestContainer2', {
         buildArgs: {
           key1: 'val1',
@@ -84,11 +82,7 @@ describe('Container Construct Tests', () => {
       chai.assert.isString(construct.repo?.repositoryUri);
       chai
         .expect(construct.buildCommand)
-        .to.be.equal(
-          `docker build  -t ${
-            construct.imageUri
-          } -f Dockerfile ${process.cwd()}`
-        );
+        .to.be.equal(`docker build  -t ${construct.imageUri} -f Dockerfile .`);
       const construct2 = new container(stack, 'MyTestContainer2', {
         buildArgs: {
           key1: 'val1',

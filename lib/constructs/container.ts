@@ -35,7 +35,7 @@ class Container extends BaseConstruct {
     this.props = _.defaults(props, {
       buildArgs: {},
       file: 'Dockerfile',
-      context: process.cwd(),
+      context: '.',
       tag: ''
     });
 
