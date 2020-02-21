@@ -6,7 +6,7 @@ import * as packageJson from '../../../package.json';
  * instead. The abstract class has a minimal default implementation.
  */
 interface IBaseConstruct extends cdk.Construct {
-  initialize(): Promise<void>;
+  initialize(): Promise<IBaseConstruct>;
 }
 
 /**
@@ -15,11 +15,7 @@ interface IBaseConstruct extends cdk.Construct {
  */
 export abstract class BaseConstruct extends cdk.Construct
   implements IBaseConstruct {
-  /**
-   * @hideconstructor
-   * @param {cdk.Construct} scope CDK scope
-   * @param {string} id construct ID
-   */
+  /** @hideconstructor */
   constructor(scope: cdk.Construct, id: string) {
     super(scope, id);
 
@@ -30,9 +26,9 @@ export abstract class BaseConstruct extends cdk.Construct
   /**
    * subclasses can use this to perform async initialization
    *
-   * @returns {void} nothingness. throws if unsuccessful
+   * @returns nothingness. throws if unsuccessful
    */
-  public initialize(): Promise<void> {
-    return Promise.resolve();
+  public async initialize(): Promise<BaseConstruct> {
+    return Promise.resolve(this);
   }
 }
