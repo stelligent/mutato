@@ -238,27 +238,27 @@ Here is a sample `mu.yml`:
 version: 2.0
 
 mu:
-  fargate:
-    name: app1
-    port: 8000
-    env:
-      - doo: {{ env("FOO") }}
+  - fargate:
+      name: app1
+      port: 8000
+      env:
+        - doo: {{ env("FOO") }}
 
-  fargate:
-    name: app2
-    port: 9000
-    env:
-      - doo: {{ env("BAR") }}
+  - fargate:
+      name: app2
+      port: 9000
+      env:
+        - doo: {{ env("BAR") }}
 
-  database:
-    provider: serverless-aurora
-    engine: mysql
-    username: {{ env("DB_USER") }}
-    password: {{ ssm("/path/to/pass") }}
+  - database:
+      provider: serverless-aurora
+      engine: mysql
+      username: {{ env("DB_USER") }}
+      password: {{ ssm("/path/to/pass") }}
 
-  cicd:
-    docker:
-      repo: {{ env("DOCKER_REPO") }}
-      user: {{ env("DOCKER_USER") }}
-      pass: {{ ssm("/path/to/pass") }}
+  - cicd:
+      docker:
+        repo: {{ env("DOCKER_REPO") }}
+        user: {{ env("DOCKER_USER") }}
+        pass: {{ ssm("/path/to/pass") }}
 ```

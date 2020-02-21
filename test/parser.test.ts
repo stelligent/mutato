@@ -24,13 +24,15 @@ describe('Parser Module Tests', () => {
         chai.assert.isObject(json);
         chai.assert.deepEqual(json, {
           version: '0.0.0',
-          mu: {
-            fargate: {
-              name: `app-${_.get(parser.context, 'build_time')}-${
-                process.env.USER
-              }`
+          mu: [
+            {
+              fargate: {
+                name: `app-${_.get(parser.context, 'build_time')}-${
+                  process.env.USER
+                }`
+              }
             }
-          }
+          ]
         });
       });
 
@@ -42,13 +44,15 @@ describe('Parser Module Tests', () => {
         chai.assert.isObject(json);
         chai.assert.deepEqual(json, {
           version: '0.0.0',
-          mu: {
-            fargate: {
-              name: `app-${_.get(parser.context, 'build_time')}-${
-                process.env.USER
-              }`
+          mu: [
+            {
+              fargate: {
+                name: `app-${_.get(parser.context, 'build_time')}-${
+                  process.env.USER
+                }`
+              }
             }
-          }
+          ]
         });
       });
 
@@ -112,7 +116,7 @@ describe('Parser Module Tests', () => {
         chai.assert.isObject(result);
         chai.assert.deepEqual(result, {
           version: 0.1,
-          mu: { fargate: { name: 'app', test: 'foo' } }
+          mu: [{ fargate: { name: 'app', test: 'foo' } }]
         });
       });
 
