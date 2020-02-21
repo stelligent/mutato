@@ -1,5 +1,9 @@
 import rc = require('rc');
 import parse = require('parse-strings-in-object');
+import {
+  BuildEnvironmentVariable,
+  BuildEnvironmentVariableType
+} from '@aws-cdk/aws-codebuild';
 import * as cp from 'child_process';
 import * as _ from 'lodash';
 import * as traverse from 'traverse';
@@ -19,6 +23,9 @@ function rcTyped<T>(name: string, defaults: T): T {
 const gitRemoteCmd = 'git config --get remote.origin.url || true';
 const gitBranchCmd = 'git rev-parse --abbrev-ref HEAD || true';
 
+type StringEnvironmentVariableMap = { [key: string]: string };
+type BuildEnvironmentVariableMap = { [key: string]: BuildEnvironmentVariable };
+
 export const config = rcTyped('mu', {
   opts: {
     git: {
@@ -34,11 +41,25 @@ export const config = rcTyped('mu', {
       user: _.get(process.env, 'DOCKER_USERNAME', ''),
       pass: _.get(process.env, 'DOCKER_PASSWORD', '')
     }
+  },
+  toStringEnvironmentMap: function() {
+    return traverse(this).reduce(function(acc, x) {
+      if (this.isLeaf && this.key !== '_' && !_.isFunction(x))
+        acc[`mu_${this.path.join('__')}`] = `${x}`;
+      return acc;
+    }, {}) as StringEnvironmentVariableMap;
+  },
+  toBuildEnvironmentMap: function() {
+    const stringMap = this.toStringEnvironmentMap();
+    return _.transform(
+      stringMap,
+      (result: BuildEnvironmentVariableMap, value, key) => {
+        result[key] = {
+          type: BuildEnvironmentVariableType.PLAINTEXT,
+          value
+        };
+      },
+      {}
+    );
   }
 });
-
-export const flatten = traverse(config).reduce(function(acc, x) {
-  if (this.isLeaf && this.key !== '_')
-    acc[`mu_${this.path.join('__')}`] = `${x}`;
-  return acc;
-}, {}) as { [key: string]: string };
