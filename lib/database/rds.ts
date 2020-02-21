@@ -2,7 +2,6 @@ import {
   InstanceClass,
   InstanceSize,
   InstanceType,
-  SubnetType,
   Vpc
 } from '@aws-cdk/aws-ec2';
 import {
@@ -126,11 +125,7 @@ export class MuRDSServerless extends Construct {
   ) {
     super(scope, id);
 
-    const vpc = new Vpc(this, 'ServerlessVPC', {
-      subnetConfiguration: [
-        { name: 'aurora_private_', subnetType: SubnetType.PRIVATE }
-      ]
-    });
+    const vpc = new Vpc(this, 'ServerlessVPC');
 
     // Requires a VPC
     // Would fail if there isn't private subnets
