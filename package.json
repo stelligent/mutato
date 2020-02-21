@@ -14,7 +14,7 @@
     "build": "npm-run-all lint:check compile",
     "watch": "tsc -w",
     "compile": "tsc",
-    "test": "nyc mocha test/**/*.test.ts",
+    "test": "nyc mocha --recursive './test/**/*.test.ts'",
     "lint:check": "prettier --check {lib,bin,test}/**/*.ts",
     "lint:write": "prettier --check --write {lib,bin,test}/**/*.ts",
     "clean": "git clean -xdff -e node_modules",
