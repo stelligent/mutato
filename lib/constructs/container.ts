@@ -3,6 +3,7 @@ import * as cdk from '@aws-cdk/core';
 import * as assert from 'assert';
 import * as debug from 'debug';
 import * as _ from 'lodash';
+import { config } from '../config';
 import { BaseConstruct } from './interfaces';
 
 interface ContainerProps {
@@ -59,6 +60,14 @@ class Container extends BaseConstruct {
     assert.ok(this.props.tag);
     this.imageUri = this.props.tag as string;
     this.log('container image URI for runtime is set to: %s', this.imageUri);
+  }
+
+  /** @returns {string} shell command containing "docker login" */
+  get loginCommand(): string {
+    const region = cdk.Stack.of(this).region;
+    return this.repo
+      ? `$(aws ecr get-login --no-include-email --region ${region})`
+      : `docker login -u ${config.opts.docker.user} -p ${config.opts.docker.pass}`;
   }
 
   /** @returns {string} shell command containing "docker build" */

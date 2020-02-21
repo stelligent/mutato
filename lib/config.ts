@@ -29,6 +29,10 @@ export const config = rcTyped('mu', {
         .execSync(gitBranchCmd, { encoding: 'utf8', timeout: 1000 })
         .trim(),
       secret: _.get(process.env, 'GITHUB_TOKEN', '')
+    },
+    docker: {
+      user: _.get(process.env, 'DOCKER_USERNAME', ''),
+      pass: _.get(process.env, 'DOCKER_PASSWORD', '')
     }
   }
 });
