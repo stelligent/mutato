@@ -24,7 +24,7 @@ describe('Empty Stack', () => {
     const app = new cdk.App();
     const stack = new MuApp(app, 'MyTestStack');
     await stack.fromObject({
-      mu: {}
+      mu: []
     });
     cdkAssert.expect(stack).to(cdkAssert.haveResource('AWS::EC2::VPC'));
     cdkAssert.expect(stack).to(cdkAssert.haveResource('AWS::ECS::Cluster'));
@@ -34,14 +34,16 @@ describe('Empty Stack', () => {
     const app = new cdk.App();
     const stack = new MuApp(app, 'MyTestStack');
     await stack.fromObject({
-      mu: {
-        network: {
-          vpc: {
-            enableDnsHostnames: false,
-            enableDnsSupport: false
+      mu: [
+        {
+          network: {
+            vpc: {
+              enableDnsHostnames: false,
+              enableDnsSupport: false
+            }
           }
         }
-      }
+      ]
     });
     cdkAssert.expect(stack).to(
       cdkAssert.haveResource('AWS::EC2::VPC', {
