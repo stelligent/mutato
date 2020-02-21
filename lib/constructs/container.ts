@@ -1,3 +1,6 @@
+import * as codeBuild from '@aws-cdk/aws-codebuild';
+import * as codePipeline from '@aws-cdk/aws-codepipeline';
+import * as codePipelineActions from '@aws-cdk/aws-codepipeline-actions';
 import * as ecr from '@aws-cdk/aws-ecr';
 import * as cdk from '@aws-cdk/core';
 import * as assert from 'assert';
@@ -60,6 +63,41 @@ class Container extends BaseConstruct {
     assert.ok(this.props.tag);
     this.imageUri = this.props.tag as string;
     this.log('container image URI for runtime is set to: %s', this.imageUri);
+  }
+
+  /** @returns a CodeBuild action that can be embedded inside a CodePipeline */
+  createBuildAction(
+    source: codePipeline.Artifact
+  ): codePipelineActions.CodeBuildAction {
+    const project = new codeBuild.PipelineProject(
+      this,
+      `ContainerBuildProject-${this.node.id}`,
+      {
+        environment: {
+          buildImage: codeBuild.LinuxBuildImage.STANDARD_2_0,
+          privileged: true,
+          environmentVariables: config.toBuildEnvironmentMap()
+        },
+        buildSpec: codeBuild.BuildSpec.fromObject({
+          version: 0.2,
+          phases: {
+            install: { 'runtime-versions': { docker: 18 } },
+            pre_build: { commands: [this.loginCommand] },
+            build: { commands: [this.buildCommand] },
+            post_build: { commands: [this.pushCommand] }
+          }
+        })
+      }
+    );
+
+    this.repo?.grantPullPush(project);
+    const buildAction = new codePipelineActions.CodeBuildAction({
+      actionName: 'CodeBuild',
+      input: source,
+      project
+    });
+
+    return buildAction;
   }
 
   /** @returns {string} shell command containing "docker login" */
