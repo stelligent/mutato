@@ -12,7 +12,6 @@
   },
   "scripts": {
     "build": "npm-run-all lint:check compile",
-    "watch": "tsc -w",
     "compile": "tsc",
     "test": "nyc mocha test/**/*.test.ts",
     "lint:check": "prettier --check {lib,bin,test}/**/*.ts",
@@ -20,7 +19,9 @@
     "clean": "git clean -xdff -e node_modules",
     "docs:check": "eslint . --ext .ts",
     "docs:generate": "typedoc",
-    "docs": "npm-run-all docs:*"
+    "docs": "npm-run-all docs:*",
+    "deploy": "cdk deploy MuPipelineStack",
+    "synth": "cdk synth --verbose -o dist"
   },
   "devDependencies": {
     "@aws-cdk/assert": "^1.25.0",
