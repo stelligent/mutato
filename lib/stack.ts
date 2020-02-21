@@ -147,10 +147,10 @@ export class MuPipeline extends cdk.Stack {
     /** @todo properly handle non Github repositories */
     assert.ok(params != null && params.owner && params.repo);
 
-    const sourceOutput = new codePipeline.Artifact();
+    const githubSource = new codePipeline.Artifact();
     const source = new codePipelineActions.GitHubSourceAction({
       actionName: 'GitHub',
-      output: sourceOutput,
+      output: githubSource,
       owner: params?.owner as string,
       repo: params?.name as string,
       branch,
@@ -184,7 +184,7 @@ export class MuPipeline extends cdk.Stack {
         version: 0.2,
         phases: {
           install: { commands: ['npm install'] },
-          build: { commands: ['npx cdk synth -o dist'] }
+          build: { commands: ['npm run synth'] }
         },
         artifacts: { 'base-directory': 'dist', files: '**/*' }
       })
@@ -193,7 +193,7 @@ export class MuPipeline extends cdk.Stack {
     const buildAction = new codePipelineActions.CodeBuildAction({
       actionName: 'CodeBuild',
       project,
-      input: sourceOutput,
+      input: githubSource,
       outputs: [synthesizedApp]
     });
     pipeline.addStage({
@@ -212,7 +212,9 @@ export class MuPipeline extends cdk.Stack {
 
     const containersStage = pipeline.addStage({ stageName: 'Mu-Containers' });
     this.app.containers?.forEach(container =>
-      containersStage.addAction(container.createBuildAction(sourceOutput))
+      containersStage.addAction(
+        container.createBuildAction(githubSource, pipeline)
+      )
     );
 
     const deployStage = pipeline.addStage({ stageName: 'Mu-Deploy' });

@@ -67,10 +67,11 @@ class Container extends BaseConstruct {
 
   /** @returns a CodeBuild action that can be embedded inside a CodePipeline */
   createBuildAction(
-    source: codePipeline.Artifact
+    source: codePipeline.Artifact,
+    pipeline: codePipeline.Pipeline
   ): codePipelineActions.CodeBuildAction {
     const project = new codeBuild.PipelineProject(
-      this,
+      cdk.Stack.of(pipeline),
       `ContainerBuildProject-${this.node.id}`,
       {
         environment: {
