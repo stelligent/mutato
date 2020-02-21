@@ -16,6 +16,7 @@ FROM mcr.microsoft.com/vscode/devcontainers/javascript-node:0.43-12
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 ARG USERNAME=node
+ENV USER=node
 
 # [Optional] Update UID/GID if needed
 RUN if [ "$USER_GID" != "1000" ] || [ "$USER_UID" != "1000" ]; then \
