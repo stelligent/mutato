@@ -4,6 +4,6 @@ ADD . /mu
 WORKDIR /mu
 ENV USER=root
 
-RUN npm install  && npm test && npm run clean
+RUN npm install && npm test
 
 ENTRYPOINT [ "/bin/bash" ]
