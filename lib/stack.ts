@@ -8,7 +8,7 @@ import * as debug from 'debug';
 import * as _ from 'lodash';
 import * as parseGithubUrl from 'parse-github-url';
 import * as path from 'path';
-import { config, flatten as flattenedConfig } from './config';
+import { config } from './config';
 import { container, network } from './constructs';
 import { Parser } from './parser';
 
@@ -18,6 +18,19 @@ import { Parser } from './parser';
 export class MuApp extends cdk.Stack {
   private readonly parser = new Parser();
   private readonly log: debug.Debugger;
+
+  private _network?: network;
+  private _containers?: container[];
+
+  /** @returns network construct of the stack */
+  public get network(): network | undefined {
+    return this._network;
+  }
+
+  /** @returns network construct of the stack */
+  public get containers(): container[] | undefined {
+    return this._containers;
+  }
 
   /**
    * @hideconstructor
@@ -71,113 +84,26 @@ export class MuApp extends cdk.Stack {
         .map(c => c[type]);
 
     // create the base network construct
-    const networks = queryByType('network');
-    assert.ok(networks.length <= 1);
-    const networkProps = _.head(networks);
+    const networkTags = queryByType('network');
+    assert.ok(networkTags.length <= 1);
+    const networkProps = _.head(networkTags);
     const networkConstruct = new network(this, 'network', networkProps);
-    await networkConstruct.initialize();
+    this._network = (await networkConstruct.initialize()) as network;
 
-    // create the pipeline that builds and pushes all our containers
-    const containers = queryByType('container');
-    if (containers.length > 0) {
-      this.log('synthesizing Mu pipeline');
-      const pipeline = new codePipeline.Pipeline(this, 'MuPipeline', {
-        restartExecutionOnUpdate: true
-      });
-
-      this.log('attempting to extract local Github metadata');
-      const params = parseGithubUrl(config.opts.git.remote);
-      const branch = config.opts.git.branch;
-      this.log('deploying the branch "%s" in repository: %o', branch, params);
-
-      /** @todo properly handle non Github repositories */
-      assert.ok(params != null && params.owner && params.repo);
-
-      const sourceOutput = new codePipeline.Artifact();
-      const source = new codePipelineActions.GitHubSourceAction({
-        actionName: 'GitHub',
-        output: sourceOutput,
-        owner: params?.owner as string,
-        repo: params?.name as string,
-        branch,
-        oauthToken: cdk.SecretValue.plainText(
-          /** @todo add SSM here to read github token from */
-          config.opts.git.secret
+    // create all our container constructs
+    const containerTags = queryByType('container');
+    this._containers = (await Promise.all(
+      containerTags
+        .map(
+          containerProps =>
+            new container(
+              this,
+              `container-${_.get(containerProps, 'name', 'default')}`,
+              containerProps
+            )
         )
-      });
-      pipeline.addStage({
-        stageName: 'Mu-Source',
-        actions: [source]
-      });
-
-      const wrapVal = (value: string): codeBuild.BuildEnvironmentVariable => {
-        return {
-          type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-          value
-        };
-      };
-
-      this.log('forwarding configuration to CodeBuild: %o', flattenedConfig);
-      const wrappedFlattenedConfig = _.mapValues(flattenedConfig, wrapVal);
-
-      const buildActions: codePipeline.IAction[] = [];
-      for (let i = 0; i < containers.length; ++i) {
-        const containerProps = containers[i];
-        const containerConstruct = new container(
-          this,
-          // TODO fixme
-          `Container-${_.get(containerProps, 'name', 'default')}`,
-          containerProps
-        );
-        await containerConstruct.initialize();
-
-        const project = new codeBuild.PipelineProject(
-          this,
-          // TODO fixme
-          `CodeBuild-${_.get(containerProps, 'name', 'default')}`,
-          {
-            environment: {
-              buildImage: codeBuild.LinuxBuildImage.STANDARD_2_0,
-              privileged: true,
-              environmentVariables: wrappedFlattenedConfig
-            },
-            buildSpec: codeBuild.BuildSpec.fromObject({
-              version: 0.2,
-              phases: {
-                install: {
-                  'runtime-versions': {
-                    docker: 18
-                  }
-                },
-                pre_build: {
-                  commands: [containerConstruct.loginCommand]
-                },
-                build: {
-                  commands: [containerConstruct.buildCommand]
-                },
-                post_build: {
-                  commands: [containerConstruct.pushCommand]
-                }
-              }
-            })
-          }
-        );
-        const buildAction = new codePipelineActions.CodeBuildAction({
-          actionName: 'CodeBuild',
-          input: sourceOutput,
-          project
-        });
-
-        if (containerConstruct.repo)
-          containerConstruct.repo.grantPullPush(project);
-        buildActions.push(buildAction);
-      }
-
-      pipeline.addStage({
-        stageName: 'Mu-Build',
-        actions: buildActions
-      });
-    }
+        .map(container => container.initialize())
+    )) as container[];
   }
 }
 
@@ -238,37 +164,29 @@ export class MuPipeline extends cdk.Stack {
       actions: [source]
     });
 
-    const wrapVal = (value: string): codeBuild.BuildEnvironmentVariable => {
-      return { type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT, value };
+    const environmentVariables = {
+      DEBUG: {
+        type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
+        value: 'mu*'
+      },
+      // propagate this machine's configuration into CodeBuild since Git
+      // metadata and other utilities are unavailable in that environment
+      ...config.toBuildEnvironmentMap()
     };
-
-    this.log('forwarding configuration to CodeBuild: %o', flattenedConfig);
-    const wrappedFlattenedConfig = _.mapValues(flattenedConfig, wrapVal);
+    this.log('environment of CodeBuild: %o', environmentVariables);
 
     const project = new codeBuild.PipelineProject(this, 'CodeBuild', {
       environment: {
         buildImage: codeBuild.LinuxBuildImage.fromDockerRegistry('node:lts'),
-        environmentVariables: {
-          DEBUG: wrapVal('mu*'),
-          // propagate this machine's configuration into CodeBuild since Git
-          // metadata and other utilities are unavailable in that environment
-          ...wrappedFlattenedConfig
-        }
+        environmentVariables
       },
       buildSpec: codeBuild.BuildSpec.fromObject({
         version: 0.2,
         phases: {
-          install: {
-            commands: ['npm install']
-          },
-          build: {
-            commands: ['npx cdk synth -o dist']
-          }
+          install: { commands: ['npm install'] },
+          build: { commands: ['npx cdk synth -o dist'] }
         },
-        artifacts: {
-          'base-directory': 'dist',
-          files: '**/*'
-        }
+        artifacts: { 'base-directory': 'dist', files: '**/*' }
       })
     });
     const synthesizedApp = new codePipeline.Artifact();
@@ -283,13 +201,18 @@ export class MuPipeline extends cdk.Stack {
       actions: [buildAction]
     });
 
-    const SelfUpdateStage = pipeline.addStage({ stageName: 'Mu-SelfUpdate' });
-    SelfUpdateStage.addAction(
+    const updateStage = pipeline.addStage({ stageName: 'Mu-Update' });
+    updateStage.addAction(
       new cicd.PipelineDeployStackAction({
         stack: this,
         input: synthesizedApp,
         adminPermissions: true
       })
+    );
+
+    const containersStage = pipeline.addStage({ stageName: 'Mu-Containers' });
+    this.app.containers?.forEach(container =>
+      containersStage.addAction(container.createBuildAction(sourceOutput))
     );
 
     const deployStage = pipeline.addStage({ stageName: 'Mu-Deploy' });
