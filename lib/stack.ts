@@ -121,11 +121,20 @@ export class MuApp extends cdk.Stack {
       const wrappedFlattenedConfig = _.mapValues(flattenedConfig, wrapVal);
 
       const buildActions: codePipeline.IAction[] = [];
-      (containers as container[]).forEach(container => {
+      for(let i = 0; i < containers.length; ++i) {
+        const containerProps = containers[i];
+        const containerConstruct = new container(
+          this,
+          // TODO fixme
+          `Container-${_.get(containerProps, 'name', 'default')}`,
+          containerProps
+        );
+        await containerConstruct.initialize();
+        
         const project = new codeBuild.PipelineProject(
           this,
           // TODO fixme
-          `CodeBuild-${_.get(container, 'name', 'default')}`,
+          `CodeBuild-${_.get(containerProps, 'name', 'default')}`,
           {
             environment: {
               buildImage: codeBuild.LinuxBuildImage.STANDARD_2_0,
@@ -141,13 +150,13 @@ export class MuApp extends cdk.Stack {
                   }
                 },
                 pre_build: {
-                  commands: [container.loginCommand]
+                  commands: [containerConstruct.loginCommand]
                 },
                 build: {
-                  commands: [container.buildCommand]
+                  commands: [containerConstruct.buildCommand]
                 },
                 post_build: {
-                  commands: [container.pushCommand]
+                  commands: [containerConstruct.pushCommand]
                 }
               }
             })
@@ -159,7 +168,8 @@ export class MuApp extends cdk.Stack {
           project
         });
 
-        if (container.repo) container.repo.grantPullPush(project);
+        if (containerConstruct.repo)
+          containerConstruct.repo.grantPullPush(project);
         buildActions.push(buildAction);
       });
 
