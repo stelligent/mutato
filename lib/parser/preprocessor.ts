@@ -1,10 +1,10 @@
 import * as assert from 'assert';
-import * as bluebird from 'bluebird';
 import * as cp from 'child_process';
 import * as debug from 'debug';
 import { promises as fs } from 'fs';
 import * as _ from 'lodash';
 import * as nunjucks from 'nunjucks';
+import * as util from 'util';
 import * as px from './exceptions';
 
 const log = debug('mu:parser:PreProcessor');
@@ -105,7 +105,7 @@ export class PreProcessor {
     // note: promisify is required because we have async filters. more info:
     // https://mozilla.github.io/nunjucks/api.html#asynchronous-support
     try {
-      return (await bluebird.promisify(
+      return (await util.promisify(
         this.env.renderString.bind(this.env, input, this.ctx)
       )()) as string;
     } catch (err) {

@@ -2,40 +2,34 @@ import * as ec2 from '@aws-cdk/aws-ec2';
 import * as ecs from '@aws-cdk/aws-ecs';
 import * as cdk from '@aws-cdk/core';
 import * as debug from 'debug';
-import { BaseConstruct, IInfraConstruct } from './interfaces';
+import * as _ from 'lodash';
+import { BaseConstruct } from './interfaces';
 
-interface NetworkConfiguration {
+interface NetworkProps {
   vpc?: ec2.VpcProps;
   cluster?: ecs.ClusterProps;
 }
 
 /** Base infra construct interface */
-class Network extends BaseConstruct implements IInfraConstruct {
+class Network extends BaseConstruct {
+  private readonly props: NetworkProps;
+  private readonly log: debug.Debugger;
   public readonly vpc: ec2.Vpc;
   public readonly cluster: ecs.Cluster;
-  private readonly log: debug.Debugger;
 
-  /**
-   * @hideconstructor
-   * @param {cdk.Construct} scope CDK scope
-   * @param {string} id construct ID
-   * @param {NetworkConfiguration} props construct options
-   */
-  constructor(
-    scope: cdk.Construct,
-    id: string,
-    props: NetworkConfiguration = {}
-  ) {
+  /** @hideconstructor */
+  constructor(scope: cdk.Construct, id: string, props?: NetworkProps) {
     super(scope, id);
 
-    this.vpc = new ec2.Vpc(this, 'VPC', props.vpc);
+    this.log = debug(`mu:Network:${id}`);
+    this.props = _.defaults(props, {});
+    this.log('creating a network construct with props: %o', this.props);
+
+    this.vpc = new ec2.Vpc(this, 'VPC', this.props.vpc);
     this.cluster = new ecs.Cluster(this, 'Cluster', {
       vpc: this.vpc,
-      ...props.cluster
+      ...this.props.cluster
     });
-
-    this.log = debug(`mu:Network:${id}`);
-    this.log('construct initialized');
   }
 }
 

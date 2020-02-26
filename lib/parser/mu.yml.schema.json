@@ -9,12 +9,10 @@
       "default": "latest version of Mu, user is executing"
     },
     "mu": {
-      "type": "object",
+      "type": "array",
       "description": "Collection of Mu constructs.",
-      "patternProperties": {
-        ".*": {
-          "$ref": "#/definitions/mu_construct"
-        }
+      "items": {
+        "$ref": "#/definitions/mu_construct"
       }
     }
   },

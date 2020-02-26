@@ -1,4 +1,7 @@
 mu:
-  network:
-    vpc:
-      maxAZs: 1
+  - network:
+      vpc:
+        maxAZs: 1
+
+  - container:
+      name: mu-ecr

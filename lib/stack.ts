@@ -6,19 +6,31 @@ import * as cdk from '@aws-cdk/core';
 import * as assert from 'assert';
 import * as debug from 'debug';
 import * as _ from 'lodash';
-import * as Git from 'nodegit';
 import * as parseGithubUrl from 'parse-github-url';
 import * as path from 'path';
+import { config } from './config';
+import { container, network } from './constructs';
 import { Parser } from './parser';
-import { Registry } from './registry';
 
 /**
  * The Mu app stack, everything inside a mu.yml
  */
 export class MuApp extends cdk.Stack {
-  private readonly registry = new Registry(this);
   private readonly parser = new Parser();
   private readonly log: debug.Debugger;
+
+  private _network?: network;
+  private _containers?: container[];
+
+  /** @returns network construct of the stack */
+  public get network(): network | undefined {
+    return this._network;
+  }
+
+  /** @returns network construct of the stack */
+  public get containers(): container[] | undefined {
+    return this._containers;
+  }
 
   /**
    * @hideconstructor
@@ -63,8 +75,35 @@ export class MuApp extends cdk.Stack {
    */
   public async fromObject(muYml: object): Promise<void> {
     this.log('creating stack from object: %o', muYml);
-    const networkProps = _.get(muYml, 'mu.network', {});
-    await this.registry.create('network', 'network', networkProps);
+    // helper lambda to query mu.yml for a specific construct type
+    const queryByType = (type: string): object[] =>
+      _.get(muYml, 'mu', [])
+        .filter((c: object[]) => _.head(_.keys(c)) === type)
+        // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+        // @ts-ignore
+        .map(c => c[type]);
+
+    // create the base network construct
+    const networkTags = queryByType('network');
+    assert.ok(networkTags.length <= 1);
+    const networkProps = _.head(networkTags);
+    const networkConstruct = new network(this, 'network', networkProps);
+    this._network = (await networkConstruct.initialize()) as network;
+
+    // create all our container constructs
+    const containerTags = queryByType('container');
+    this._containers = (await Promise.all(
+      containerTags
+        .map(
+          containerProps =>
+            new container(
+              this,
+              `container-${_.get(containerProps, 'name', 'default')}`,
+              containerProps
+            )
+        )
+        .map(container => container.initialize())
+    )) as container[];
   }
 }
 
@@ -94,34 +133,30 @@ export class MuPipeline extends cdk.Stack {
   /**
    * synthesizes the pipeline stack
    */
-  async initialize(): Promise<void> {
+  initialize(): void {
     this.log('synthesizing Mu pipeline');
     const pipeline = new codePipeline.Pipeline(this, 'MuPipeline', {
       restartExecutionOnUpdate: true
     });
 
     this.log('attempting to extract local Github metadata');
-    const repo = await Git.Repository.open(process.cwd());
-    const remote = await repo.getRemote('origin');
-    const params = parseGithubUrl(remote.url());
-    const branch = (await repo.getCurrentBranch()).shorthand();
-    this.log('deploying the branch "%s" in repository: %o', params);
+    const params = parseGithubUrl(config.opts.git.remote);
+    const branch = config.opts.git.branch;
+    this.log('deploying the branch "%s" in repository: %o', branch, params);
 
     /** @todo properly handle non Github repositories */
     assert.ok(params != null && params.owner && params.repo);
-    /** @todo properly handle nonexistent GITHUB_TOKEN */
-    assert.ok(process.env.GITHUB_TOKEN);
 
-    const sourceOutput = new codePipeline.Artifact();
+    const githubSource = new codePipeline.Artifact();
     const source = new codePipelineActions.GitHubSourceAction({
       actionName: 'GitHub',
-      output: sourceOutput,
+      output: githubSource,
       owner: params?.owner as string,
       repo: params?.name as string,
       branch,
       oauthToken: cdk.SecretValue.plainText(
         /** @todo add SSM here to read github token from */
-        _.get(process.env, 'GITHUB_TOKEN', '<missing Github Token>')
+        config.opts.git.secret
       )
     });
     pipeline.addStage({
@@ -129,42 +164,36 @@ export class MuPipeline extends cdk.Stack {
       actions: [source]
     });
 
+    const environmentVariables = {
+      DEBUG: {
+        type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
+        value: 'mu*'
+      },
+      // propagate this machine's configuration into CodeBuild since Git
+      // metadata and other utilities are unavailable in that environment
+      ...config.toBuildEnvironmentMap()
+    };
+    this.log('environment of CodeBuild: %o', environmentVariables);
+
     const project = new codeBuild.PipelineProject(this, 'CodeBuild', {
       environment: {
         buildImage: codeBuild.LinuxBuildImage.fromDockerRegistry('node:lts'),
-        environmentVariables: {
-          GITHUB_TOKEN: {
-            type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-            /** @todo add SSM here to read github token from */
-            value: process.env.GITHUB_TOKEN
-          },
-          DEBUG: {
-            type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-            value: 'mu*'
-          }
-        }
+        environmentVariables
       },
       buildSpec: codeBuild.BuildSpec.fromObject({
         version: 0.2,
         phases: {
-          install: {
-            commands: ['npm install']
-          },
-          build: {
-            commands: ['npx cdk synth -- -o dist']
-          }
+          install: { commands: ['npm install'] },
+          build: { commands: ['npm run synth'] }
         },
-        artifacts: {
-          'base-directory': 'dist',
-          files: '**/*'
-        }
+        artifacts: { 'base-directory': 'dist', files: '**/*' }
       })
     });
     const synthesizedApp = new codePipeline.Artifact();
     const buildAction = new codePipelineActions.CodeBuildAction({
       actionName: 'CodeBuild',
       project,
-      input: sourceOutput,
+      input: githubSource,
       outputs: [synthesizedApp]
     });
     pipeline.addStage({
@@ -172,13 +201,20 @@ export class MuPipeline extends cdk.Stack {
       actions: [buildAction]
     });
 
-    const SelfUpdateStage = pipeline.addStage({ stageName: 'Mu-SelfUpdate' });
-    SelfUpdateStage.addAction(
+    const updateStage = pipeline.addStage({ stageName: 'Mu-Update' });
+    updateStage.addAction(
       new cicd.PipelineDeployStackAction({
         stack: this,
         input: synthesizedApp,
         adminPermissions: true
       })
+    );
+
+    const containersStage = pipeline.addStage({ stageName: 'Mu-Containers' });
+    this.app.containers?.forEach(container =>
+      containersStage.addAction(
+        container.createBuildAction(githubSource, pipeline)
+      )
     );
 
     const deployStage = pipeline.addStage({ stageName: 'Mu-Deploy' });
