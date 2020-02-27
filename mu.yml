@@ -4,4 +4,9 @@ mu:
         maxAZs: 1
 
   - container:
-      name: mu-ecr
+      name: nginx
+      uri: nginx:latest
+
+  - service:
+      provider: fargate
+      container: nginx
