@@ -31,7 +31,7 @@ class Service extends BaseConstruct {
   constructor(scope: cdk.Construct, id: string, props: ServiceProps) {
     super(scope, id);
 
-    this.log = debug(`mu:constructs:container:${id}`);
+    this.log = debug(`mu:constructs:service:${id}`);
     this.props = _.defaults(props, {
       provider: ServiceProvider.FARGATE
     });
