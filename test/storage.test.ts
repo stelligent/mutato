@@ -43,5 +43,44 @@ describe('EFS Module Tests', function() {
         })
       );
     });
+    it('should create EFS FileSystem with custom values', () => {
+      const app = new cdk.App();
+      const stack = new Mu.MuStack(app, 'FileSystemTestStack');
+      const vpc = new Vpc(stack, 'MyVpc');
+
+      const subnetIds: string[] = [];
+      vpc.privateSubnets.forEach((subnet, index) => {
+        subnetIds.push(subnet.subnetId);
+      });
+      const mysg = new SecurityGroup(stack, 'MySG', { vpc });
+
+      const myfs = new MuFileSystem(stack, 'MyFileSystem');
+
+      new MuMountTarget(stack, 'MyMount', {
+        fileSystemId: myfs.file_system.ref,
+        securityGroups: [mysg.securityGroupId],
+        subnetId: subnetIds[0],
+        ipAddress: '10.30.0.115'
+      });
+
+      expectCDK(stack).to(
+        haveResource('AWS::EFS::FileSystem', {
+          Encrypted: true,
+          PerformanceMode: 'generalPurpose',
+          ThroughputMode: 'bursting'
+        })
+      );
+      expectCDK(stack).to(
+        haveResource('AWS::EFS::MountTarget', {
+          FileSystemId: {
+            Ref: 'MyFileSystemF2621297'
+          },
+          SubnetId: {
+            Ref: 'MyVpcPrivateSubnet1Subnet5057CF7E'
+          },
+          IpAddress: '10.30.0.115'
+        })
+      );
+    });
   });
 });
