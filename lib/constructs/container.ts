@@ -28,6 +28,7 @@ class Container extends BaseConstruct {
   public readonly props: ContainerProps;
   public readonly repo?: ecr.Repository;
   public readonly imageUri: string;
+  public readonly needsBuilding: boolean;
   private readonly log: debug.Debugger;
 
   /** @hideconstructor */
@@ -37,31 +38,34 @@ class Container extends BaseConstruct {
     this.log = debug(`mu:constructs:container:${id}`);
     this.props = _.defaults(props, {
       buildArgs: {},
-      file: 'Dockerfile',
+      file: '',
       context: '.',
       uri: ''
     });
 
     this.log('creating a container construct with props: %o', this.props);
-    assert.ok(this.props.file);
     assert.ok(this.props.context);
     assert.ok(_.isString(this.props.uri));
 
-    if (this.props.uri) {
-      this.log('container is building for DockerHub');
+    if (this.props.file) {
+      if (this.props.uri) {
+        this.log('container is building for DockerHub');
+      } else {
+        this.log('container is building for AWS ECR');
+        this.repo = new ecr.Repository(this, 'repository', {
+          removalPolicy: cdk.RemovalPolicy.DESTROY
+        });
+        const uri = this.repo.repositoryUri;
+        this.log('overriding container uri to: %s', uri);
+        this.props.uri = uri;
+      }
     } else {
-      this.log('container is building for AWS ECR');
-      this.repo = new ecr.Repository(this, 'repository', {
-        removalPolicy: cdk.RemovalPolicy.DESTROY
-      });
-
-      const uri = this.repo.repositoryUri;
-      this.log('overriding container uri to: %s', uri);
-      this.props.uri = uri;
+      this.log('container is not building in the pipeline');
     }
 
     assert.ok(this.props.uri);
     this.imageUri = this.props.uri as string;
+    this.needsBuilding = !!this.props.file;
     this.log('container image URI for runtime is set to: %s', this.imageUri);
   }
 
@@ -70,6 +74,7 @@ class Container extends BaseConstruct {
     source: codePipeline.Artifact,
     pipeline: codePipeline.Pipeline
   ): codePipelineActions.CodeBuildAction {
+    assert.ok(this.needsBuilding, 'container is not part of the pipeline');
     const project = new codeBuild.PipelineProject(
       cdk.Stack.of(pipeline),
       `ContainerBuildProject-${this.node.id}`,
@@ -103,6 +108,7 @@ class Container extends BaseConstruct {
 
   /** @returns {string} shell command containing "docker login" */
   get loginCommand(): string {
+    assert.ok(this.needsBuilding, 'container is not part of the pipeline');
     const region = cdk.Stack.of(this).region;
     return this.repo
       ? `$(aws ecr get-login --no-include-email --region ${region})`
@@ -111,6 +117,7 @@ class Container extends BaseConstruct {
 
   /** @returns {string} shell command containing "docker build" */
   get buildCommand(): string {
+    assert.ok(this.needsBuilding, 'container is not part of the pipeline');
     const buildArg = _.reduce(
       this.props.buildArgs,
       (accumulate, value, key) => `${accumulate} --build-arg ${key}="${value}"`,
@@ -124,6 +131,7 @@ class Container extends BaseConstruct {
 
   /** @returns {string} shell command containing "docker push" */
   get pushCommand(): string {
+    assert.ok(this.needsBuilding, 'container is not part of the pipeline');
     return `docker push ${this.imageUri}`;
   }
 }

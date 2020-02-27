@@ -229,11 +229,13 @@ export class MuPipeline extends cdk.Stack {
     );
 
     const containersStage = pipeline.addStage({ stageName: 'Mu-Containers' });
-    this.app.containers?.forEach(container =>
-      containersStage.addAction(
-        container.createBuildAction(githubSource, pipeline)
-      )
-    );
+    this.app.containers
+      ?.filter(container => container.needsBuilding)
+      .forEach(container =>
+        containersStage.addAction(
+          container.createBuildAction(githubSource, pipeline)
+        )
+      );
 
     const deployStage = pipeline.addStage({ stageName: 'Mu-Deploy' });
     deployStage.addAction(

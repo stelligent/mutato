@@ -12,6 +12,7 @@ describe('Container Construct Tests', () => {
       const app = new cdk.App();
       const stack = new cdk.Stack(app, 'MyTestStack');
       const construct = new container(stack, 'MyTestContainer', {
+        file: 'Dockerfile',
         uri: 'stelligent/mu'
       });
       cdkAssert
@@ -25,6 +26,7 @@ describe('Container Construct Tests', () => {
       const app = new cdk.App();
       const stack = new cdk.Stack(app, 'MyTestStack');
       const construct = new container(stack, 'MyTestContainer', {
+        file: 'Dockerfile',
         uri: 'stelligent/mu'
       });
       chai.assert.isUndefined(construct.repo);
@@ -52,6 +54,7 @@ describe('Container Construct Tests', () => {
       const app = new cdk.App();
       const stack = new cdk.Stack(app, 'MyTestStack');
       const construct = new container(stack, 'MyTestContainer', {
+        file: 'Dockerfile',
         uri: 'stelligent/mu'
       });
       chai.assert.isUndefined(construct.repo);
@@ -66,7 +69,9 @@ describe('Container Construct Tests', () => {
     it('should create an ECR repository when no tag is given', () => {
       const app = new cdk.App();
       const stack = new cdk.Stack(app, 'MyTestStack');
-      const construct = new container(stack, 'MyTestContainer');
+      const construct = new container(stack, 'MyTestContainer', {
+        file: 'Dockerfile'
+      });
       cdkAssert
         .expect(stack)
         .to(cdkAssert.haveResource('AWS::ECR::Repository'));
@@ -77,7 +82,9 @@ describe('Container Construct Tests', () => {
     it('should ba able to generate a build command without a tag', () => {
       const app = new cdk.App();
       const stack = new cdk.Stack(app, 'MyTestStack');
-      const construct = new container(stack, 'MyTestContainer');
+      const construct = new container(stack, 'MyTestContainer', {
+        file: 'Dockerfile'
+      });
       chai.assert.isObject(construct.repo);
       chai.assert.isString(construct.repo?.repositoryUri);
       chai
@@ -101,7 +108,9 @@ describe('Container Construct Tests', () => {
     it('should ba able to generate a push command without a tag', () => {
       const app = new cdk.App();
       const stack = new cdk.Stack(app, 'MyTestStack');
-      const construct = new container(stack, 'MyTestContainer');
+      const construct = new container(stack, 'MyTestContainer', {
+        file: 'Dockerfile'
+      });
       chai.assert.isObject(construct.repo);
       chai.assert.isString(construct.repo?.repositoryUri);
       chai
