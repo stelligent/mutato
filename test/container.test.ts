@@ -12,7 +12,7 @@ describe('Container Construct Tests', () => {
       const app = new cdk.App();
       const stack = new cdk.Stack(app, 'MyTestStack');
       const construct = new container(stack, 'MyTestContainer', {
-        tag: 'stelligent/mu'
+        uri: 'stelligent/mu'
       });
       cdkAssert
         .expect(stack)
@@ -25,7 +25,7 @@ describe('Container Construct Tests', () => {
       const app = new cdk.App();
       const stack = new cdk.Stack(app, 'MyTestStack');
       const construct = new container(stack, 'MyTestContainer', {
-        tag: 'stelligent/mu'
+        uri: 'stelligent/mu'
       });
       chai.assert.isUndefined(construct.repo);
       chai.assert.equal(construct.imageUri, 'stelligent/mu');
@@ -39,7 +39,7 @@ describe('Container Construct Tests', () => {
         },
         file: 'Dockerfile2',
         context: 'Context2',
-        tag: 'stelligent/mu'
+        uri: 'stelligent/mu'
       });
       chai
         .expect(construct2.buildCommand)
@@ -52,7 +52,7 @@ describe('Container Construct Tests', () => {
       const app = new cdk.App();
       const stack = new cdk.Stack(app, 'MyTestStack');
       const construct = new container(stack, 'MyTestContainer', {
-        tag: 'stelligent/mu'
+        uri: 'stelligent/mu'
       });
       chai.assert.isUndefined(construct.repo);
       chai.assert.equal(construct.imageUri, 'stelligent/mu');

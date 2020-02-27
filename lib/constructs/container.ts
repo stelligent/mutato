@@ -16,8 +16,8 @@ interface ContainerProps {
   file?: string;
   /** path to build context (default: current working directory) */
   context?: string;
-  /** image's push tag. leave empty if using AWS ECR */
-  tag?: string;
+  /** image's push URI. leave empty if using AWS ECR */
+  uri?: string;
 }
 
 /**
@@ -39,15 +39,15 @@ class Container extends BaseConstruct {
       buildArgs: {},
       file: 'Dockerfile',
       context: '.',
-      tag: ''
+      uri: ''
     });
 
     this.log('creating a container construct with props: %o', this.props);
     assert.ok(this.props.file);
     assert.ok(this.props.context);
-    assert.ok(_.isString(this.props.tag));
+    assert.ok(_.isString(this.props.uri));
 
-    if (this.props.tag) {
+    if (this.props.uri) {
       this.log('container is building for DockerHub');
     } else {
       this.log('container is building for AWS ECR');
@@ -55,13 +55,13 @@ class Container extends BaseConstruct {
         removalPolicy: cdk.RemovalPolicy.DESTROY
       });
 
-      const tag = this.repo.repositoryUri;
-      this.log('overriding container tag to: %s', tag);
-      this.props.tag = tag;
+      const uri = this.repo.repositoryUri;
+      this.log('overriding container uri to: %s', uri);
+      this.props.uri = uri;
     }
 
-    assert.ok(this.props.tag);
-    this.imageUri = this.props.tag as string;
+    assert.ok(this.props.uri);
+    this.imageUri = this.props.uri as string;
     this.log('container image URI for runtime is set to: %s', this.imageUri);
   }
 
