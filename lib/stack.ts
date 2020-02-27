@@ -10,6 +10,7 @@ import * as parseGithubUrl from 'parse-github-url';
 import * as path from 'path';
 import { config } from './config';
 import { container, network } from './constructs';
+import { service } from './constructs/service';
 import { Parser } from './parser';
 
 /**
@@ -104,6 +105,23 @@ export class MuApp extends cdk.Stack {
         )
         .map(container => container.initialize())
     )) as container[];
+
+    // create all service constructs
+    await Promise.all(
+      queryByType('service')
+        .map(
+          props =>
+            new service(this, `service-${_.get(props, 'name', 'default')}`, {
+              network: networkConstruct,
+              container: _.find(
+                this._containers,
+                c => c.node.id === _.get(props, 'container', 'default')
+              ) as container,
+              ...props
+            })
+        )
+        .map(container => container.initialize())
+    );
   }
 }
 
