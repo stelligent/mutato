@@ -96,12 +96,7 @@ export class MuApp extends cdk.Stack {
     this._containers = (await Promise.all(
       containerTags
         .map(
-          containerProps =>
-            new container(
-              this,
-              `container-${_.get(containerProps, 'name', 'default')}`,
-              containerProps
-            )
+          props => new container(this, _.get(props, 'name', 'default'), props)
         )
         .map(container => container.initialize())
     )) as container[];
@@ -111,13 +106,13 @@ export class MuApp extends cdk.Stack {
       queryByType('service')
         .map(
           props =>
-            new service(this, `service-${_.get(props, 'name', 'default')}`, {
+            new service(this, _.get(props, 'name', 'default'), {
+              ...props,
               network: networkConstruct,
               container: _.find(
                 this._containers,
                 c => c.node.id === _.get(props, 'container', 'default')
-              ) as container,
-              ...props
+              ) as container
             })
         )
         .map(container => container.initialize())
@@ -228,14 +223,15 @@ export class MuPipeline extends cdk.Stack {
       })
     );
 
-    const containersStage = pipeline.addStage({ stageName: 'Mu-Containers' });
-    this.app.containers
-      ?.filter(container => container.needsBuilding)
-      .forEach(container =>
+    const containers = this.app.containers?.filter(c => c.needsBuilding);
+    if (containers && containers.length > 0) {
+      const containersStage = pipeline.addStage({ stageName: 'Mu-Containers' });
+      containers?.forEach(container =>
         containersStage.addAction(
           container.createBuildAction(githubSource, pipeline)
         )
       );
+    }
 
     const deployStage = pipeline.addStage({ stageName: 'Mu-Deploy' });
     deployStage.addAction(

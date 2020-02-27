@@ -43,25 +43,23 @@ class Service extends BaseConstruct {
 
     if (this.props.provider === ServiceProvider.FARGATE) {
       new ecsPatters.ApplicationLoadBalancedFargateService(this, `App${id}`, {
+        ...this.props.config,
         cluster: this.props.network.cluster,
-        vpc: this.props.network.vpc,
         taskImageOptions: {
           image: this.props.container.repo
             ? ecs.ContainerImage.fromEcrRepository(this.props.container.repo)
             : ecs.ContainerImage.fromRegistry(this.props.container.imageUri)
-        },
-        ...this.props.config
+        }
       });
     } else {
       new ecsPatters.ApplicationLoadBalancedEc2Service(this, `App${id}`, {
+        ...this.props.config,
         cluster: this.props.network.cluster,
-        vpc: this.props.network.vpc,
         taskImageOptions: {
           image: this.props.container.repo
             ? ecs.ContainerImage.fromEcrRepository(this.props.container.repo)
             : ecs.ContainerImage.fromRegistry(this.props.container.imageUri)
-        },
-        ...this.props.config
+        }
       });
     }
   }
