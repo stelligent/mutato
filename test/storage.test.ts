@@ -2,7 +2,12 @@ import Mu = require('../lib/mu-stack');
 import { expect as expectCDK, haveResource } from '@aws-cdk/assert';
 import { SecurityGroup, Vpc } from '@aws-cdk/aws-ec2';
 import * as cdk from '@aws-cdk/core';
-import { MuFileSystem, MuMountTarget } from '../lib/storage';
+import {
+  MuBucket,
+  MuBucketPolicy,
+  MuFileSystem,
+  MuMountTarget
+} from '../lib/storage';
 
 describe('EFS Module Tests', function() {
   describe('EFS Simple Configuration', () => {
@@ -81,6 +86,21 @@ describe('EFS Module Tests', function() {
           IpAddress: '10.30.0.115'
         })
       );
+    });
+  });
+});
+describe('S3 Module Tests', function() {
+  describe('S3 Simple Configuration', () => {
+    it('should create s3 Bucket with default values', () => {
+      const app = new cdk.App();
+      const stack = new Mu.MuStack(app, 'S3TestStack');
+
+      const bucket = new MuBucket(stack, 'MyBucket');
+
+      new MuBucketPolicy(stack, 'MyMount', { bucket: bucket });
+
+      expectCDK(stack).to(haveResource('AWS::S3::Bucket', {}));
+      expectCDK(stack).to(haveResource('AWS::S3::BucketPolicy', {}));
     });
   });
 });
