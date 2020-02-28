@@ -1,12 +1,4 @@
 mu:
-  - network:
-      vpc:
-        maxAZs: 1
-
   - container:
-      name: nginx
-      uri: nginx:latest
-
-  - service:
-      provider: fargate
-      container: nginx
+      name: mu-ecr
+      file: Dockerfile
