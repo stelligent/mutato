@@ -27,8 +27,8 @@ interface ContainerProps {
 class Container extends BaseConstruct {
   public readonly props: ContainerProps;
   public readonly repo?: ecr.Repository;
-  public readonly imageUri: string;
   public readonly needsBuilding: boolean;
+  private readonly repositoryName: string;
   private readonly log: debug.Debugger;
 
   /** @hideconstructor */
@@ -38,8 +38,8 @@ class Container extends BaseConstruct {
     this.log = debug(`mu:constructs:container:${id}`);
     this.props = _.defaults(props, {
       buildArgs: {},
-      file: '',
       context: '.',
+      file: '',
       uri: ''
     });
 
@@ -47,29 +47,37 @@ class Container extends BaseConstruct {
     assert.ok(this.props.context);
     assert.ok(_.isString(this.props.uri));
 
-    if (this.props.file) {
-      if (this.props.uri) {
-        this.log('container is building for DockerHub');
-      } else {
-        this.log('container is building for AWS ECR');
-        const git = config.getGithubMetaData();
-        const repositoryName = `${git.owner}/${git.repo}-${git.branch}`;
-        this.repo = new ecr.Repository(this, 'repository', {
-          removalPolicy: cdk.RemovalPolicy.DESTROY,
-          repositoryName
-        });
-        const uri = this.repo.repositoryUri;
-        this.log('overriding container uri to: %s', uri);
-        this.props.uri = uri;
-      }
-    } else {
-      this.log('container is not building in the pipeline');
+    // by default, repositoryName is the same as URI passed in
+    this.repositoryName = this.props.uri as string;
+
+    if (this.props.file && !this.props.uri) {
+      this.log('container is building for AWS ECR');
+      const git = config.getGithubMetaData();
+      this.repositoryName = `${git.owner}/${git.repo}-${git.branch}`;
+      this.repo = new ecr.Repository(this, 'repository', {
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+        repositoryName: this.repositoryName
+      });
+      // const uri = `${stack.account}.dkr.ecr.${stack.region}.${stack.urlSuffix}/${repositoryName}`;
+      const uri = this.repo.repositoryUri;
+      this.log('overriding container uri to: %s', uri);
+      this.props.uri = uri;
     }
 
     assert.ok(this.props.uri);
-    this.imageUri = this.props.uri as string;
+    assert.ok(this.repositoryName);
     this.needsBuilding = !!this.props.file;
-    this.log('container image URI for runtime is set to: %s', this.imageUri);
+  }
+
+  /**
+   * Creates a portable URI that is independent of what stack is building this
+   * container (in case of ECR building). This is here to avoid circular refs.
+   * @param stack stack or construct needing a ref to the URI
+   */
+  createPortableUri(stack: cdk.Construct): string {
+    const owner = cdk.Stack.of(stack);
+    const uri = `${owner.account}.dkr.ecr.${owner.region}.${owner.urlSuffix}/${this.repositoryName}`;
+    return this.repo ? uri : (this.props.uri as string);
   }
 
   /** @returns a CodeBuild action that can be embedded inside a CodePipeline */
@@ -110,7 +118,7 @@ class Container extends BaseConstruct {
   }
 
   /** @returns {string} shell command containing "docker login" */
-  get loginCommand(): string {
+  private get loginCommand(): string {
     assert.ok(this.needsBuilding, 'container is not part of the pipeline');
     const region = cdk.Stack.of(this).region;
     return this.repo
@@ -119,7 +127,7 @@ class Container extends BaseConstruct {
   }
 
   /** @returns {string} shell command containing "docker build" */
-  get buildCommand(): string {
+  private get buildCommand(): string {
     assert.ok(this.needsBuilding, 'container is not part of the pipeline');
     const buildArg = _.reduce(
       this.props.buildArgs,
@@ -127,15 +135,15 @@ class Container extends BaseConstruct {
       ''
     ).trim();
     const f = this.props.file;
-    const t = this.imageUri;
+    const t = this.props.uri;
     // TODO: escape for shell args here to prevent shell attacks
     return `docker build ${buildArg} -t ${t} -f ${f} ${this.props.context}`;
   }
 
   /** @returns {string} shell command containing "docker push" */
-  get pushCommand(): string {
+  private get pushCommand(): string {
     assert.ok(this.needsBuilding, 'container is not part of the pipeline');
-    return `docker push ${this.imageUri}`;
+    return `docker push ${this.props.uri}`;
   }
 }
 

@@ -1,5 +1,11 @@
 import * as ecs from '@aws-cdk/aws-ecs';
-import * as ecsPatters from '@aws-cdk/aws-ecs-patterns';
+import {
+  ApplicationLoadBalancedEc2Service,
+  ApplicationLoadBalancedEc2ServiceProps,
+  ApplicationLoadBalancedFargateService,
+  ApplicationLoadBalancedFargateServiceProps
+} from '@aws-cdk/aws-ecs-patterns';
+import * as iam from '@aws-cdk/aws-iam';
 import * as cdk from '@aws-cdk/core';
 import * as assert from 'assert';
 import * as debug from 'debug';
@@ -18,8 +24,8 @@ interface ServiceProps {
   container: container;
   network: network;
   config?:
-    | ecsPatters.ApplicationLoadBalancedEc2ServiceProps
-    | ecsPatters.ApplicationLoadBalancedFargateServiceProps;
+    | ApplicationLoadBalancedEc2ServiceProps
+    | ApplicationLoadBalancedFargateServiceProps;
 }
 
 /** */
@@ -41,26 +47,37 @@ class Service extends BaseConstruct {
     assert.ok(_.isObject(this.props.container));
     assert.ok(_.isObject(this.props.network));
 
+    const imageUri = this.props.container.createPortableUri(this);
+    const ecrPullPolicy = new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: [
+        'ecr:GetAuthorizationToken',
+        'ecr:BatchCheckLayerAvailability',
+        'ecr:GetDownloadUrlForLayer',
+        'ecr:BatchGetImage'
+      ],
+      // TODO fix this and limit the scope
+      resources: ['*']
+    });
+
     if (this.props.provider === ServiceProvider.FARGATE) {
-      new ecsPatters.ApplicationLoadBalancedFargateService(this, `App${id}`, {
+      const app = new ApplicationLoadBalancedFargateService(this, `App${id}`, {
         ...this.props.config,
         cluster: this.props.network.cluster,
         taskImageOptions: {
-          image: this.props.container.repo
-            ? ecs.ContainerImage.fromEcrRepository(this.props.container.repo)
-            : ecs.ContainerImage.fromRegistry(this.props.container.imageUri)
+          image: ecs.ContainerImage.fromRegistry(imageUri)
         }
       });
+      app.taskDefinition.addToExecutionRolePolicy(ecrPullPolicy);
     } else {
-      new ecsPatters.ApplicationLoadBalancedEc2Service(this, `App${id}`, {
+      const app = new ApplicationLoadBalancedEc2Service(this, `App${id}`, {
         ...this.props.config,
         cluster: this.props.network.cluster,
         taskImageOptions: {
-          image: this.props.container.repo
-            ? ecs.ContainerImage.fromEcrRepository(this.props.container.repo)
-            : ecs.ContainerImage.fromRegistry(this.props.container.imageUri)
+          image: ecs.ContainerImage.fromRegistry(imageUri)
         }
       });
+      app.taskDefinition.addToExecutionRolePolicy(ecrPullPolicy);
     }
   }
 }
