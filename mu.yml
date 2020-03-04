@@ -1,4 +1,8 @@
 mu:
   - container:
-      name: mu-ecr
-      file: Dockerfile
+      name: nginx
+      uri: nginx:latest
+
+  - service:
+      provider: fargate
+      container: nginx
