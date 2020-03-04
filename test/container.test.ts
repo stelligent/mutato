@@ -19,7 +19,7 @@ describe('Container Construct Tests', () => {
         .expect(stack)
         .notTo(cdkAssert.haveResource('AWS::ECR::Repository'));
       chai.assert.isUndefined(construct.repo);
-      chai.assert.equal(construct.imageUri, 'stelligent/mu');
+      chai.assert.equal(construct.props.uri, 'stelligent/mu');
     });
 
     it('should ba able to generate a build command with a tag', () => {
@@ -30,7 +30,7 @@ describe('Container Construct Tests', () => {
         uri: 'stelligent/mu'
       });
       chai.assert.isUndefined(construct.repo);
-      chai.assert.equal(construct.imageUri, 'stelligent/mu');
+      chai.assert.equal(construct.props.uri, 'stelligent/mu');
       chai
         .expect(construct.buildCommand)
         .to.be.equal(`docker build  -t stelligent/mu -f Dockerfile .`);
@@ -58,10 +58,10 @@ describe('Container Construct Tests', () => {
         uri: 'stelligent/mu'
       });
       chai.assert.isUndefined(construct.repo);
-      chai.assert.equal(construct.imageUri, 'stelligent/mu');
+      chai.assert.equal(construct.props.uri, 'stelligent/mu');
       chai
         .expect(construct.pushCommand)
-        .to.be.equal(`docker push ${construct.imageUri}`);
+        .to.be.equal(`docker push ${construct.props.uri}`);
     });
   });
 
@@ -89,7 +89,7 @@ describe('Container Construct Tests', () => {
       chai.assert.isString(construct.repo?.repositoryUri);
       chai
         .expect(construct.buildCommand)
-        .to.be.equal(`docker build  -t ${construct.imageUri} -f Dockerfile .`);
+        .to.be.equal(`docker build  -t ${construct.props.uri} -f Dockerfile .`);
       const construct2 = new container(stack, 'MyTestContainer2', {
         buildArgs: {
           key1: 'val1',
@@ -101,7 +101,7 @@ describe('Container Construct Tests', () => {
       chai
         .expect(construct2.buildCommand)
         .to.be.equal(
-          `docker build --build-arg key1="val1" --build-arg key2="val2" -t ${construct2.imageUri} -f Dockerfile2 Context2`
+          `docker build --build-arg key1="val1" --build-arg key2="val2" -t ${construct2.props.uri} -f Dockerfile2 Context2`
         );
     });
 
@@ -115,7 +115,7 @@ describe('Container Construct Tests', () => {
       chai.assert.isString(construct.repo?.repositoryUri);
       chai
         .expect(construct.pushCommand)
-        .to.be.equal(`docker push ${construct.imageUri}`);
+        .to.be.equal(`docker push ${construct.props.uri}`);
     });
   });
 });

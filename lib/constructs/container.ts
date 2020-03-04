@@ -118,7 +118,7 @@ class Container extends BaseConstruct {
   }
 
   /** @returns {string} shell command containing "docker login" */
-  private get loginCommand(): string {
+  get loginCommand(): string {
     assert.ok(this.needsBuilding, 'container is not part of the pipeline');
     const region = cdk.Stack.of(this).region;
     return this.repo
@@ -127,7 +127,7 @@ class Container extends BaseConstruct {
   }
 
   /** @returns {string} shell command containing "docker build" */
-  private get buildCommand(): string {
+  get buildCommand(): string {
     assert.ok(this.needsBuilding, 'container is not part of the pipeline');
     const buildArg = _.reduce(
       this.props.buildArgs,
@@ -141,7 +141,7 @@ class Container extends BaseConstruct {
   }
 
   /** @returns {string} shell command containing "docker push" */
-  private get pushCommand(): string {
+  get pushCommand(): string {
     assert.ok(this.needsBuilding, 'container is not part of the pipeline');
     return `docker push ${this.props.uri}`;
   }
