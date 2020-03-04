@@ -50,10 +50,16 @@ export const config = rcTyped('mu', {
     assert.ok(meta, 'only Github remotes are supported');
     assert.ok(meta?.name, 'Github repo could not be determined');
     assert.ok(meta?.owner, 'Github owner could not be determined');
+    const repo = meta?.name as string;
+    const owner = meta?.owner as string;
+    const branch = this.opts.git.branch;
+    const id = `${owner}-${repo}-${branch}`.replace(/[^A-Za-z0-9-]/g, '-');
     return {
       repo: meta?.name as string,
       owner: meta?.owner as string,
-      branch: this.opts.git.branch
+      branch: this.opts.git.branch,
+      /** this can be used in CDK names and IDs to uniquely ID a resource */
+      identifier: id
     };
   },
   toStringEnvironmentMap() {

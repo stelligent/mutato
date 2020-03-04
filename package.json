@@ -20,8 +20,8 @@
     "docs:check": "eslint . --ext .ts",
     "docs:generate": "typedoc",
     "docs": "npm-run-all docs:*",
-    "deploy": "cdk deploy MuPipelineStack",
-    "synth": "cdk synth --verbose -o dist"
+    "deploy": "DEBUG='mu*' npx cdk deploy --verbose MuPipeline",
+    "synth": "DEBUG='mu*' npx cdk synth --verbose -o dist"
   },
   "devDependencies": {
     "@aws-cdk/assert": "^1.27.0",

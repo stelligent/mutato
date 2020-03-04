@@ -53,7 +53,7 @@ class Container extends BaseConstruct {
     if (this.props.file && !this.props.uri) {
       this.log('container is building for AWS ECR');
       const git = config.getGithubMetaData();
-      this.repositoryName = `${git.owner}/${git.repo}-${git.branch}`;
+      this.repositoryName = `mu/${git.identifier}`;
       this.repo = new ecr.Repository(this, 'repository', {
         removalPolicy: cdk.RemovalPolicy.DESTROY,
         repositoryName: this.repositoryName
@@ -66,6 +66,7 @@ class Container extends BaseConstruct {
 
     assert.ok(this.props.uri);
     assert.ok(this.repositoryName);
+    this.log('uri: %s, name: %s', this.props.uri, this.repositoryName);
     this.needsBuilding = !!this.props.file;
   }
 

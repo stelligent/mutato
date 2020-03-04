@@ -14,12 +14,12 @@ async function main(): Promise<void> {
   log('creating a new Mu app stack');
   const stack = new MuApp(app, 'MuApp', {
     description: 'all application resources specified in mu.yml',
-    stackName: `Mu-App-${git.owner}-${git.repo}-${git.branch}`
+    stackName: `Mu-App-${git.identifier}`
   });
   log('creating a new Mu pipeline stack');
   const pipeline = new MuPipeline(app, 'MuPipeline', {
     description: 'pipeline that manages deploy of mu.yml resources',
-    stackName: `Mu-Pipeline-${git.owner}-${git.repo}-${git.branch}`,
+    stackName: `Mu-Pipeline-${git.identifier}`,
     app: stack
   });
   log('reading constructs from mu.yml');
