@@ -32,7 +32,7 @@ describe('Container Construct Tests', () => {
       chai.assert.isUndefined(construct.repo);
       chai.assert.equal(construct.props.uri, 'stelligent/mu');
       chai
-        .expect(construct.buildCommand)
+        .expect(construct.buildCommand(stack))
         .to.be.equal(`docker build  -t stelligent/mu -f Dockerfile .`);
       const construct2 = new container(stack, 'MyTestContainer2', {
         buildArgs: {
@@ -44,7 +44,7 @@ describe('Container Construct Tests', () => {
         uri: 'stelligent/mu'
       });
       chai
-        .expect(construct2.buildCommand)
+        .expect(construct2.buildCommand(stack))
         .to.be.equal(
           `docker build --build-arg key1="val1" --build-arg key2="val2" -t stelligent/mu -f Dockerfile2 Context2`
         );
@@ -59,9 +59,10 @@ describe('Container Construct Tests', () => {
       });
       chai.assert.isUndefined(construct.repo);
       chai.assert.equal(construct.props.uri, 'stelligent/mu');
+      const uri = construct.createPortableUri(stack);
       chai
-        .expect(construct.pushCommand)
-        .to.be.equal(`docker push ${construct.props.uri}`);
+        .expect(construct.pushCommand(stack))
+        .to.be.equal(`docker push ${uri}`);
     });
   });
 
@@ -87,9 +88,10 @@ describe('Container Construct Tests', () => {
       });
       chai.assert.isObject(construct.repo);
       chai.assert.isString(construct.repo?.repositoryUri);
+      const uri1 = construct.createPortableUri(stack);
       chai
-        .expect(construct.buildCommand)
-        .to.be.equal(`docker build  -t ${construct.props.uri} -f Dockerfile .`);
+        .expect(construct.buildCommand(stack))
+        .to.be.equal(`docker build  -t ${uri1} -f Dockerfile .`);
       const construct2 = new container(stack, 'MyTestContainer2', {
         buildArgs: {
           key1: 'val1',
@@ -98,10 +100,11 @@ describe('Container Construct Tests', () => {
         file: 'Dockerfile2',
         context: 'Context2'
       });
+      const uri2 = construct2.createPortableUri(stack);
       chai
-        .expect(construct2.buildCommand)
+        .expect(construct2.buildCommand(stack))
         .to.be.equal(
-          `docker build --build-arg key1="val1" --build-arg key2="val2" -t ${construct2.props.uri} -f Dockerfile2 Context2`
+          `docker build --build-arg key1="val1" --build-arg key2="val2" -t ${uri2} -f Dockerfile2 Context2`
         );
     });
 
@@ -113,9 +116,10 @@ describe('Container Construct Tests', () => {
       });
       chai.assert.isObject(construct.repo);
       chai.assert.isString(construct.repo?.repositoryUri);
+      const uri = construct.createPortableUri(stack);
       chai
-        .expect(construct.pushCommand)
-        .to.be.equal(`docker push ${construct.props.uri}`);
+        .expect(construct.pushCommand(stack))
+        .to.be.equal(`docker push ${uri}`);
     });
   });
 });

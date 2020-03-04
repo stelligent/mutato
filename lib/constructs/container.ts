@@ -2,6 +2,7 @@ import * as codeBuild from '@aws-cdk/aws-codebuild';
 import * as codePipeline from '@aws-cdk/aws-codepipeline';
 import * as codePipelineActions from '@aws-cdk/aws-codepipeline-actions';
 import * as ecr from '@aws-cdk/aws-ecr';
+import * as iam from '@aws-cdk/aws-iam';
 import * as cdk from '@aws-cdk/core';
 import * as assert from 'assert';
 import * as debug from 'debug';
@@ -101,14 +102,21 @@ class Container extends BaseConstruct {
           phases: {
             install: { 'runtime-versions': { docker: 18 } },
             pre_build: { commands: [this.loginCommand] },
-            build: { commands: [this.buildCommand] },
-            post_build: { commands: [this.pushCommand] }
+            build: { commands: [this.buildCommand(pipeline)] },
+            post_build: { commands: [this.pushCommand(pipeline)] }
           }
         })
       }
     );
 
-    this.repo?.grantPullPush(project);
+    project.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['ecr:*', 'cloudtrail:LookupEvents'],
+        // TODO fix this and limit the scope
+        resources: ['*']
+      })
+    );
     const buildAction = new codePipelineActions.CodeBuildAction({
       actionName: 'CodeBuild',
       input: source,
@@ -128,7 +136,7 @@ class Container extends BaseConstruct {
   }
 
   /** @returns {string} shell command containing "docker build" */
-  get buildCommand(): string {
+  buildCommand(owner: cdk.Construct): string {
     assert.ok(this.needsBuilding, 'container is not part of the pipeline');
     const buildArg = _.reduce(
       this.props.buildArgs,
@@ -136,15 +144,15 @@ class Container extends BaseConstruct {
       ''
     ).trim();
     const f = this.props.file;
-    const t = this.props.uri;
+    const t = this.createPortableUri(owner);
     // TODO: escape for shell args here to prevent shell attacks
     return `docker build ${buildArg} -t ${t} -f ${f} ${this.props.context}`;
   }
 
   /** @returns {string} shell command containing "docker push" */
-  get pushCommand(): string {
+  pushCommand(owner: cdk.Construct): string {
     assert.ok(this.needsBuilding, 'container is not part of the pipeline');
-    return `docker push ${this.props.uri}`;
+    return `docker push ${this.createPortableUri(owner)}`;
   }
 }
 
