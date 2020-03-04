@@ -3,6 +3,10 @@ mu:
       name: nginx
       uri: nginx:latest
 
+  - container:
+      name: mu-ecr
+      file: Dockerfile
+
   - service:
       provider: fargate
       container: nginx
