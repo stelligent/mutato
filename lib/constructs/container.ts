@@ -52,8 +52,11 @@ class Container extends BaseConstruct {
         this.log('container is building for DockerHub');
       } else {
         this.log('container is building for AWS ECR');
+        const git = config.getGithubMetaData();
+        const repositoryName = `${git.owner}/${git.repo}-${git.branch}`;
         this.repo = new ecr.Repository(this, 'repository', {
-          removalPolicy: cdk.RemovalPolicy.DESTROY
+          removalPolicy: cdk.RemovalPolicy.DESTROY,
+          repositoryName
         });
         const uri = this.repo.repositoryUri;
         this.log('overriding container uri to: %s', uri);
