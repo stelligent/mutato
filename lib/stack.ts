@@ -6,7 +6,6 @@ import * as cdk from '@aws-cdk/core';
 import * as assert from 'assert';
 import * as debug from 'debug';
 import * as _ from 'lodash';
-import * as parseGithubUrl from 'parse-github-url';
 import * as path from 'path';
 import { config } from './config';
 import { container, network } from './constructs';
@@ -153,20 +152,16 @@ export class MuPipeline extends cdk.Stack {
     });
 
     this.log('attempting to extract local Github metadata');
-    const params = parseGithubUrl(config.opts.git.remote);
-    const branch = config.opts.git.branch;
-    this.log('deploying the branch "%s" in repository: %o', branch, params);
-
-    /** @todo properly handle non Github repositories */
-    assert.ok(params != null && params.owner && params.repo);
+    const git = config.getGithubMetaData();
+    this.log('branch %s of repository %s', git.branch, git.repo);
 
     const githubSource = new codePipeline.Artifact();
     const source = new codePipelineActions.GitHubSourceAction({
       actionName: 'GitHub',
       output: githubSource,
-      owner: params?.owner as string,
-      repo: params?.name as string,
-      branch,
+      owner: git.owner,
+      repo: git.repo,
+      branch: git.branch,
       oauthToken: cdk.SecretValue.plainText(
         /** @todo add SSM here to read github token from */
         config.opts.git.secret

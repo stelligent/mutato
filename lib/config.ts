@@ -4,8 +4,10 @@ import {
   BuildEnvironmentVariable,
   BuildEnvironmentVariableType
 } from '@aws-cdk/aws-codebuild';
+import * as assert from 'assert';
 import * as cp from 'child_process';
 import * as _ from 'lodash';
+import * as parseGithubUrl from 'parse-github-url';
 import * as traverse from 'traverse';
 
 /**
@@ -42,17 +44,28 @@ export const config = rcTyped('mu', {
       pass: _.get(process.env, 'DOCKER_PASSWORD', '')
     }
   },
-  toStringEnvironmentMap: function() {
+  getGithubMetaData() {
+    const meta = parseGithubUrl(config.opts.git.remote);
+    /** @todo properly handle non Github repositories */
+    assert.ok(meta, 'only Github remotes are supported');
+    assert.ok(meta?.name, 'Github repo could not be determined');
+    assert.ok(meta?.owner, 'Github owner could not be determined');
+    return {
+      repo: meta?.name as string,
+      owner: meta?.owner as string,
+      branch: this.opts.git.branch
+    };
+  },
+  toStringEnvironmentMap() {
     return traverse(this).reduce(function(acc, x) {
       if (this.isLeaf && this.key !== '_' && !_.isFunction(x))
         acc[`mu_${this.path.join('__')}`] = `${x}`;
       return acc;
     }, {}) as StringEnvironmentVariableMap;
   },
-  toBuildEnvironmentMap: function() {
-    const stringMap = this.toStringEnvironmentMap();
+  toBuildEnvironmentMap() {
     return _.transform(
-      stringMap,
+      this.toStringEnvironmentMap(),
       (result: BuildEnvironmentVariableMap, value, key) => {
         result[key] = {
           type: BuildEnvironmentVariableType.PLAINTEXT,
