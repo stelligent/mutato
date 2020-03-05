@@ -45,7 +45,7 @@ export const config = rcTyped('mu', {
     }
   },
   getGithubMetaData() {
-    const meta = parseGithubUrl(config.opts.git.remote);
+    const meta = parseGithubUrl(this.opts.git.remote);
     /** @todo properly handle non Github repositories */
     assert.ok(meta, 'only Github remotes are supported');
     assert.ok(meta?.name, 'Github repo could not be determined');
