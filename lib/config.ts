@@ -6,9 +6,12 @@ import {
 } from '@aws-cdk/aws-codebuild';
 import * as assert from 'assert';
 import * as cp from 'child_process';
+import * as debug from 'debug';
 import * as _ from 'lodash';
 import * as parseGithubUrl from 'parse-github-url';
 import * as traverse from 'traverse';
+
+const log = debug('mu:config');
 
 /**
  * @param {string} name "rc" namespace
@@ -28,6 +31,7 @@ const gitBranchCmd = 'git rev-parse --abbrev-ref HEAD || true';
 type StringEnvironmentVariableMap = { [key: string]: string };
 type BuildEnvironmentVariableMap = { [key: string]: BuildEnvironmentVariable };
 
+log('extracting configuration');
 export const config = rcTyped('mu', {
   opts: {
     git: {
@@ -82,3 +86,5 @@ export const config = rcTyped('mu', {
     );
   }
 });
+
+log('Mu configuration: %o', config.toStringEnvironmentMap());

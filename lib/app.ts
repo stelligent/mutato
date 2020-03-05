@@ -102,9 +102,17 @@ export class App extends cdk.App {
       // propagate this machine's configuration into CodeBuild since Git
       // metadata and other utilities are unavailable in that environment
       ...config.toBuildEnvironmentMap(),
+      USER: {
+        type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
+        value: 'root'
+      },
       DEBUG: {
         type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
         value: 'mu*'
+      },
+      DEBUG_COLORS: {
+        type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
+        value: '0'
       }
     };
     this.debug('environment of CodeBuild: %o', environmentVariables);
