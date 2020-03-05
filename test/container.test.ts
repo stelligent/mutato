@@ -18,7 +18,6 @@ describe('Container Construct Tests', () => {
       cdkAssert
         .expect(stack)
         .notTo(cdkAssert.haveResource('AWS::ECR::Repository'));
-      chai.assert.isUndefined(construct.repo);
       chai.assert.equal(construct.props.uri, 'stelligent/mu');
     });
 
@@ -29,10 +28,9 @@ describe('Container Construct Tests', () => {
         file: 'Dockerfile',
         uri: 'stelligent/mu'
       });
-      chai.assert.isUndefined(construct.repo);
       chai.assert.equal(construct.props.uri, 'stelligent/mu');
       chai
-        .expect(construct.buildCommand(stack))
+        .expect(construct.buildCommand)
         .to.be.equal(`docker build  -t stelligent/mu -f Dockerfile .`);
       const construct2 = new container(stack, 'MyTestContainer2', {
         buildArgs: {
@@ -44,7 +42,7 @@ describe('Container Construct Tests', () => {
         uri: 'stelligent/mu'
       });
       chai
-        .expect(construct2.buildCommand(stack))
+        .expect(construct2.buildCommand)
         .to.be.equal(
           `docker build --build-arg key1="val1" --build-arg key2="val2" -t stelligent/mu -f Dockerfile2 Context2`
         );
@@ -57,12 +55,9 @@ describe('Container Construct Tests', () => {
         file: 'Dockerfile',
         uri: 'stelligent/mu'
       });
-      chai.assert.isUndefined(construct.repo);
       chai.assert.equal(construct.props.uri, 'stelligent/mu');
-      const uri = construct.createPortableUri(stack);
-      chai
-        .expect(construct.pushCommand(stack))
-        .to.be.equal(`docker push ${uri}`);
+      const uri = construct.getImageUri();
+      chai.expect(construct.pushCommand).to.be.equal(`docker push ${uri}`);
     });
   });
 
@@ -70,14 +65,12 @@ describe('Container Construct Tests', () => {
     it('should create an ECR repository when no tag is given', () => {
       const app = new cdk.App();
       const stack = new cdk.Stack(app, 'MyTestStack');
-      const construct = new container(stack, 'MyTestContainer', {
+      new container(stack, 'MyTestContainer', {
         file: 'Dockerfile'
       });
       cdkAssert
         .expect(stack)
         .to(cdkAssert.haveResource('AWS::ECR::Repository'));
-      chai.assert.isObject(construct.repo);
-      chai.assert.isString(construct.repo?.repositoryUri);
     });
 
     it('should ba able to generate a build command without a tag', () => {
@@ -86,11 +79,10 @@ describe('Container Construct Tests', () => {
       const construct = new container(stack, 'MyTestContainer', {
         file: 'Dockerfile'
       });
-      chai.assert.isObject(construct.repo);
-      chai.assert.isString(construct.repo?.repositoryUri);
-      const uri1 = construct.createPortableUri(stack);
+
+      const uri1 = construct.getImageUri();
       chai
-        .expect(construct.buildCommand(stack))
+        .expect(construct.buildCommand)
         .to.be.equal(`docker build  -t ${uri1} -f Dockerfile .`);
       const construct2 = new container(stack, 'MyTestContainer2', {
         buildArgs: {
@@ -100,9 +92,9 @@ describe('Container Construct Tests', () => {
         file: 'Dockerfile2',
         context: 'Context2'
       });
-      const uri2 = construct2.createPortableUri(stack);
+      const uri2 = construct2.getImageUri();
       chai
-        .expect(construct2.buildCommand(stack))
+        .expect(construct2.buildCommand)
         .to.be.equal(
           `docker build --build-arg key1="val1" --build-arg key2="val2" -t ${uri2} -f Dockerfile2 Context2`
         );
@@ -114,12 +106,9 @@ describe('Container Construct Tests', () => {
       const construct = new container(stack, 'MyTestContainer', {
         file: 'Dockerfile'
       });
-      chai.assert.isObject(construct.repo);
-      chai.assert.isString(construct.repo?.repositoryUri);
-      const uri = construct.createPortableUri(stack);
-      chai
-        .expect(construct.pushCommand(stack))
-        .to.be.equal(`docker push ${uri}`);
+
+      const uri = construct.getImageUri();
+      chai.expect(construct.pushCommand).to.be.equal(`docker push ${uri}`);
     });
   });
 });

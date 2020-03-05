@@ -47,7 +47,7 @@ class Service extends BaseConstruct {
     assert.ok(_.isObject(this.props.container));
     assert.ok(_.isObject(this.props.network));
 
-    const imageUri = this.props.container.createPortableUri(this);
+    const imageUri = this.props.container.getImageUri(this);
     const ecrPullPolicy = new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
       actions: [
