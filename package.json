@@ -13,7 +13,8 @@
   "scripts": {
     "build": "npm-run-all lint:check compile",
     "compile": "tsc",
-    "test": "npm run build && nyc mocha test/**/*.test.ts",
+    "test": "DEBUG='mu*' npm-run-all build test:mocha",
+    "test:mocha": "nyc mocha test/**/*.test.ts 2>npm-test.log",
     "lint:check": "prettier --check {lib,bin,test}/**/*.ts",
     "lint:write": "prettier --check --write {lib,bin,test}/**/*.ts",
     "clean": "git clean -xdff -e node_modules",
