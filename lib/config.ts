@@ -1,22 +1,22 @@
-import rc = require('rc');
-import parse = require('parse-strings-in-object');
 import {
   BuildEnvironmentVariable,
   BuildEnvironmentVariableType
 } from '@aws-cdk/aws-codebuild';
-import * as assert from 'assert';
-import * as cp from 'child_process';
-import * as debug from 'debug';
-import * as _ from 'lodash';
-import * as parseGithubUrl from 'parse-github-url';
-import * as traverse from 'traverse';
+import assert from 'assert';
+import cp from 'child_process';
+import debug from 'debug';
+import _ from 'lodash';
+import parseGithubUrl from 'parse-github-url';
+import rc from 'rc';
+import traverse from 'traverse';
+import parse = require('parse-strings-in-object');
 
 const log = debug('mu:config');
 
 /**
- * @param {string} name "rc" namespace
- * @param {T} defaults default configuration object
- * @returns {T} overridden configuration with "rc"
+ * @param name "rc" namespace
+ * @param defaults default configuration object
+ * @returns overridden configuration with "rc"
  */
 function rcTyped<T>(name: string, defaults: T): T {
   const userConfig = rc(name, defaults);
@@ -46,6 +46,9 @@ export const config = rcTyped('mu', {
     docker: {
       user: _.get(process.env, 'DOCKER_USERNAME', ''),
       pass: _.get(process.env, 'DOCKER_PASSWORD', '')
+    },
+    preprocessor: {
+      timeout: '10s'
     }
   },
   getGithubMetaData() {

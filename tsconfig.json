@@ -19,6 +19,7 @@
     "strictPropertyInitialization": false,
     "typeRoots": ["./node_modules/@types"],
     "resolveJsonModule": true,
+    "esModuleInterop": true,
     "outDir": "out",
     "allowJs": true
   },

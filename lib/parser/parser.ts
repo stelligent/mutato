@@ -1,11 +1,16 @@
-import * as assert from 'assert';
-import * as debug from 'debug';
-import { Converter } from './converter';
-import * as px from './exceptions';
+import assert from 'assert';
+import debug from 'debug';
+import _ from 'lodash';
+import { Loader } from './loader';
 import { PreProcessor } from './preprocessor';
-import { Validator } from './validator';
 
 const log = debug('mu:parser:Parser');
+// todo: we can do better than this!
+interface MuEnvironmentSpec {
+  containers?: object[];
+  actions?: object[];
+  deploy?: object[];
+}
 
 /**
  * mu.yml parser
@@ -13,65 +18,61 @@ const log = debug('mu:parser:Parser');
  * this class glues all the components for the parser together
  */
 export class Parser {
-  private readonly preprocessor: PreProcessor;
-  private readonly converter: Converter;
-  private readonly validator: Validator;
-
-  /** @hideconstructor */
-  constructor() {
-    this.preprocessor = new PreProcessor();
-    this.converter = new Converter();
-    this.validator = new Validator();
-  }
-
   /**
-   * @returns {object} build context of parser
-   * @todo I am not happy about this, make this typed and managed by the parser
-   * instead of the preprocessor, but this does it for now
-   */
-  public get context(): object {
-    return this.preprocessor.context;
-  }
-
-  /**
-   * parses the input mu.yml as a string
+   * parses the input mu.yml string
    *
-   * @param {string} input mu.yml as a string
-   * @returns {object} mu.yml objects
+   * @param input mu.yml as a string
    */
-  public async parseString(input: string): Promise<object> {
+  public parse(input: string): Map<string, MuEnvironmentSpec> {
     log('attempting to parse mu.yml string: %s', input);
-    const yaml = await this.preprocessor.renderString(input);
-    return this.parseYAML(yaml);
-  }
+    log('going for the first pass, extracting environments');
 
-  /**
-   * parses the input mu.yml as a file
-   *
-   * @param {string} path mu.yml file path
-   * @returns {object} mu.yml objects
-   */
-  public async parseFile(path: string): Promise<object> {
-    log('attempting to parse mu.yml file: %s', path);
-    const yaml = await this.preprocessor.renderFile(path);
-    return this.parseYAML(yaml);
-  }
+    // during the first pass, we just want to figure out what environments we
+    // are targeting. in this pass, environment-specific configuration is not
+    // supported. we just want to extract "environments:" section.
+    const environmentLoader = new Loader();
+    const environmentPreprocessor = new PreProcessor();
+    log('first pass preprocessing the YAML string to look for environments');
+    const firstPassYaml = environmentPreprocessor.render(input);
+    log('first pass loading the YAML string to look for environments');
+    const firstPassParsed = environmentLoader.load(firstPassYaml);
+    log('looking for an environment tag');
+    const environments = firstPassParsed.filter(tags =>
+      _.isObject(_.get(tags, 'environments'))
+    );
+    assert.ok(environments.length <= 1, 'too many environment tags specified');
+    log('extracting the environment tag');
+    const environmentTag = _.isEmpty(environments)
+      ? { environments: ['development'] } // default environment
+      : (_.head(environments) as object);
+    log('environment is set to: %o', environmentTag);
+    const environmentArray = _.get(environmentTag, 'environments', []);
+    assert.ok(_.isArray(environmentArray) && !_.isEmpty(environmentArray));
+    const environmentKeys = environmentArray.map((e: object | string) =>
+      _.isObject(e) ? _.head(_.keys(e)) : e
+    );
+    log('environment keys: %o', environmentKeys);
 
-  /**
-   * shared code path for public methods of parser
-   *
-   * @param {string} yamlString YAML string to parse
-   * @returns {object} YAML to JSON converted object
-   * @throws {px.ValidationFailedError}
-   */
-  private parseYAML(yamlString: string): object {
-    const json = this.converter.convertString(yamlString);
-    try {
-      assert.ok(this.validator.validateObject(json));
-    } catch (err) {
-      log('schema validation failed: %o', err);
-      throw new px.ValidationFailedError();
-    }
-    return json;
+    const resources = new Map<string, MuEnvironmentSpec>();
+
+    // during the second pass, we now load and parse the rest of the file. this
+    // time we have environment keys so we can do environment specific configs.
+    environmentKeys.map((key: string) => {
+      assert.ok(_.isString(key));
+      const environmentLoader = new Loader();
+      const environmentPreprocessor = new PreProcessor({ environment: key });
+      log('second pass preprocessing the YAML string to look for environments');
+      const yaml = environmentPreprocessor.render(input);
+      log('second pass loading the YAML string to look for non-environments');
+      const parsed = environmentLoader.load(yaml);
+      log('looking for non-environment tags');
+      const nonEnvironments = parsed.filter(
+        tags => !_.isObject(_.get(tags, 'environments'))
+      );
+      // todo: do validation here
+      resources.set(key, nonEnvironments as MuEnvironmentSpec);
+    });
+
+    return resources;
   }
 }
