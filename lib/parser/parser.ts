@@ -7,9 +7,10 @@ import { PreProcessor } from './preprocessor';
 const log = debug('mu:parser:Parser');
 // todo: we can do better than this!
 interface MuEnvironmentSpec {
+  environment?: object;
   containers?: object[];
+  resources?: object[];
   actions?: object[];
-  deploy?: object[];
 }
 
 /**
@@ -31,7 +32,7 @@ export class Parser {
     // are targeting. in this pass, environment-specific configuration is not
     // supported. we just want to extract "environments:" section.
     const environmentLoader = new Loader();
-    const environmentPreprocessor = new PreProcessor();
+    const environmentPreprocessor = new PreProcessor({ environment: '' });
     log('first pass preprocessing the YAML string to look for environments');
     const firstPassYaml = environmentPreprocessor.render(input);
     log('first pass loading the YAML string to look for environments');
@@ -70,7 +71,20 @@ export class Parser {
         tags => !_.isObject(_.get(tags, 'environments'))
       );
       // todo: do validation here
-      resources.set(key, nonEnvironments as MuEnvironmentSpec);
+      resources.set(key, {
+        ..._.transform(
+          _.filter(nonEnvironments),
+          (result, value, key) => {
+            const tag = _.head(_.keys(_.get(nonEnvironments, key))) as string;
+            assert.ok(tag && _.isString(tag));
+            _.set(result, tag, _.get(value, tag));
+          },
+          {}
+        ),
+        environment: _.head(
+          _.filter(environmentArray.map((e: object | string) => _.get(e, key)))
+        )
+      } as MuEnvironmentSpec);
     });
 
     return resources;

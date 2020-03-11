@@ -96,7 +96,7 @@
       "html",
       "text-summary"
     ],
-    "all": true
+    "all": false
   },
   "prettier": {
     "printWidth": 80,
