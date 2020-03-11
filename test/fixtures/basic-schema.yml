@@ -1,5 +1,0 @@
-version: 0.0.0
-
-mu:
-  - fargate:
-      name: app-{{ build_time }}-{{ env("USER") }}
