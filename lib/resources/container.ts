@@ -26,7 +26,7 @@ interface ContainerProps {
 export class Container extends cdk.Construct {
   public readonly props: ContainerProps;
   public readonly needsBuilding: boolean;
-  private readonly _repo?: ecr.Repository;
+  public readonly repo?: ecr.Repository;
   private readonly _debug: debug.Debugger;
   private readonly _repositoryName: string;
 
@@ -53,11 +53,11 @@ export class Container extends cdk.Construct {
       this._debug('container is building for AWS ECR');
       const git = config.getGithubMetaData();
       this._repositoryName = `mu/${git.identifier}`;
-      this._repo = new ecr.Repository(this, 'repository', {
+      this.repo = new ecr.Repository(this, 'repository', {
         removalPolicy: cdk.RemovalPolicy.DESTROY,
         repositoryName: this._repositoryName
       });
-      const uri = this._repo.repositoryUri;
+      const uri = this.repo.repositoryUri;
       this._debug('overriding container uri to: %s', uri);
       this.props.uri = uri;
     }
@@ -79,7 +79,7 @@ export class Container extends cdk.Construct {
     if (caller) {
       const stack = cdk.Stack.of(caller);
       const uri = `${stack.account}.dkr.ecr.${stack.region}.${stack.urlSuffix}/${this._repositoryName}`;
-      return this._repo ? uri : (this.props.uri as string);
+      return this.repo ? uri : (this.props.uri as string);
     } else return this.props.uri as string;
   }
 
@@ -110,7 +110,7 @@ export class Container extends cdk.Construct {
       }
     );
 
-    this._repo?.grantPullPush(project);
+    this.repo?.grantPullPush(project);
     const buildAction = new codePipelineActions.CodeBuildAction({
       actionName: `container-build-${this.node.id}`,
       input: source,
@@ -124,7 +124,7 @@ export class Container extends cdk.Construct {
   get loginCommand(): string {
     assert.ok(this.needsBuilding, 'container is not part of the pipeline');
     const region = cdk.Stack.of(this).region;
-    return this._repo
+    return this.repo
       ? `$(aws ecr get-login --no-include-email --region ${region})`
       : `docker login -u ${config.opts.docker.user} -p ${config.opts.docker.pass}`;
   }
