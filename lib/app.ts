@@ -9,10 +9,10 @@ import fs from 'fs';
 import _ from 'lodash';
 import path from 'path';
 import { config } from './config';
-import { Container } from './constructs/container';
-import { Network } from './constructs/network';
-import { Service } from './constructs/service';
 import { MuEnvironmentSpecMap, Parser } from './parser';
+import { Container } from './resources/container';
+import { Network } from './resources/network';
+import { Service } from './resources/service';
 
 /**
  * This class holds together a Mu Pipeline (a Stack) and Mu Resources (a Stack
