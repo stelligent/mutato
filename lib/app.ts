@@ -184,30 +184,41 @@ export class App extends cdk.App {
         stackName: `Mu-App-${envName}-${git.identifier}`
       });
 
-      const queryByType = (type: string): object[] =>
+      const queryConstruct = (type: string): object[] =>
         _.filter(
           (environment?.resources?.filter(
             c => _.head(_.keys(c)) === type
           ) as object[]).map(c => _.get(c, type))
         );
 
-      const networkSpecs = queryByType('network');
+      const queryContainer = (
+        nameOrUri: string,
+        requester: string
+      ): Container => {
+        this._debug('resolving container: %s', nameOrUri);
+        const container = _.find(containers, c => c.node.id === nameOrUri);
+        return container
+          ? container
+          : new Container(pipelineStack, `volatile-${requester}-${nameOrUri}`, {
+              uri: nameOrUri
+            });
+      };
+
+      const networkSpecs = queryConstruct('network');
       assert.ok(networkSpecs.length <= 1);
       const networkProp = _.head(networkSpecs);
       const networkName = `network-${envName}`;
       const networkConstruct = new Network(envStack, networkName, networkProp);
 
-      queryByType('service').forEach(
-        props =>
-          new Service(envStack, _.get(props, 'name', `service-${envName}`), {
-            ...props,
-            network: networkConstruct,
-            container: _.find(
-              containers,
-              c => c.node.id === _.get(props, 'container', 'default')
-            ) as Container
-          })
-      );
+      queryConstruct('service').forEach(props => {
+        const serviceName = _.get(props, 'name', `service-${envName}`);
+        const containerNameOrUri = _.get(props, 'container', 'default');
+        return new Service(envStack, serviceName, {
+          ...props,
+          network: networkConstruct,
+          container: queryContainer(containerNameOrUri, serviceName)
+        });
+      });
 
       this._debug('adding environment deploy stage');
       pipeline.addStage({

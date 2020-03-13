@@ -5,16 +5,13 @@ environments:
 ---
 containers:
   - docker:
-      name: nginx
-      uri: nginx:latest
-  - docker:
       name: mutato
       file: Dockerfile
 ---
 resources:
   - service:
       provider: fargate
-      container: nginx
+      container: nginx:latest
   - network:
       vpc:
         maxAZs: {{ 1 if environment == "acceptance" else 3 }}
