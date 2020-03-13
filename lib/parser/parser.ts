@@ -5,8 +5,8 @@ import { Loader } from './loader';
 import { PreProcessor } from './preprocessor';
 
 const log = debug('mu:parser:Parser');
-// todo: we can do better than this!
-interface MuEnvironmentSpec {
+export type MuEnvironmentSpecMap = Map<string, MuEnvironmentSpec>;
+export interface MuEnvironmentSpec {
   environment?: object;
   containers?: object[];
   resources?: object[];
@@ -17,6 +17,7 @@ interface MuEnvironmentSpec {
  * mu.yml parser
  *
  * this class glues all the components for the parser together
+ * @todo "containers" and "actions" cannot be environment specific, handle it
  */
 export class Parser {
   /**
@@ -24,7 +25,7 @@ export class Parser {
    *
    * @param input mu.yml as a string
    */
-  public parse(input: string): Map<string, MuEnvironmentSpec> {
+  public parse(input: string): MuEnvironmentSpecMap {
     log('attempting to parse mu.yml string: %s', input);
     log('going for the first pass, extracting environments');
 

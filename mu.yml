@@ -1,12 +1,20 @@
-mu:
-  - container:
+---
+environments:
+  - acceptance
+  - production
+---
+containers:
+  - docker:
       name: nginx
       uri: nginx:latest
-
-  - container:
-      name: mu-ecr
+  - docker:
+      name: mutato
       file: Dockerfile
-
+---
+resources:
   - service:
       provider: fargate
       container: nginx
+  - network:
+      vpc:
+        maxAZs: {{ 1 if environment == "acceptance" else 3 }}
