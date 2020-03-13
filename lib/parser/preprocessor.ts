@@ -5,9 +5,8 @@ import _ from 'lodash';
 import ms from 'ms';
 import nunjucks from 'nunjucks';
 import { config } from '../config';
-import * as px from './exceptions';
 
-const log = debug('mu:parser:PreProcessor');
+const _debug = debug('mu:parser:PreProcessor');
 type StringMap = { [key: string]: string };
 
 /**
@@ -17,13 +16,8 @@ type StringMap = { [key: string]: string };
  * @returns environment variable value, empty string if not found
  */
 function nunjucks_env_global(name: string): string {
-  log('attempting to resolve environment variable %s', name);
-  try {
-    assert.ok(_.isString(name));
-  } catch (err) {
-    log('environment variable resolution failed: %o', err);
-    throw new px.EnvironmentVariableNotValidError(name);
-  }
+  _debug('attempting to resolve environment variable %s', name);
+  assert.ok(_.isString(name));
   return _.get(process.env, name, '');
 }
 
@@ -35,24 +29,14 @@ function nunjucks_env_global(name: string): string {
  * from whitespace and newlines (trailing newline as well)
  */
 function nunjucks_cmd_global(command: string): string {
-  log('attempting to execute command %s', command);
-  try {
-    assert.ok(_.isString(command));
-  } catch (err) {
-    log('shell command must be a string: %o', err);
-    throw new px.ShellCommandNotValidError(command);
-  }
-  try {
-    return _.trim(
-      cp.execSync(command, {
-        encoding: 'utf8',
-        timeout: ms(config.opts.preprocessor.timeout)
-      })
-    );
-  } catch (err) {
-    log('shell command exited with non-zero status: %o', err);
-    throw new px.ShellCommandFailedError(command);
-  }
+  _debug('attempting to execute command %s', command);
+  assert.ok(_.isString(command));
+  return _.trim(
+    cp.execSync(command, {
+      encoding: 'utf8',
+      timeout: ms(config.opts.preprocessor.timeout)
+    })
+  );
 }
 
 /**
@@ -79,7 +63,7 @@ export class PreProcessor {
       watch: false
     });
     this.ctx = { ...context, build_time: Date.now() };
-    log('a new preprocessor is initialized with context: %o', this.ctx);
+    _debug('a new preprocessor is initialized with context: %o', this.ctx);
 
     this.env.addGlobal('env', nunjucks_env_global);
     this.env.addGlobal('cmd', nunjucks_cmd_global);
@@ -97,12 +81,7 @@ export class PreProcessor {
    * @returns processed template
    */
   public render(input: string): string {
-    log('attempting to render a string through Nunjucks: %s', input);
-    try {
-      return this.env.renderString(input, this.ctx);
-    } catch (err) {
-      log('template rendering failed: %o', err);
-      throw new px.RenderFailedError();
-    }
+    _debug('attempting to render a string through Nunjucks: %s', input);
+    return this.env.renderString(input, this.ctx);
   }
 }

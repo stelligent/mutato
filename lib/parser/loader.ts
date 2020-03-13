@@ -2,7 +2,7 @@ import debug from 'debug';
 import _ from 'lodash';
 import yaml from 'yaml';
 
-const log = debug('mu:parser:Loader');
+const _debug = debug('mu:parser:Loader');
 
 /** fault tolerant multi document YAML loader */
 export class Loader {
@@ -13,13 +13,13 @@ export class Loader {
    * @param input a multi-document YAML string
    */
   public load(input: string): object[] {
-    log('loading input YAML: %s', input);
+    _debug('loading input YAML: %s', input);
     const parsed = yaml.parseAllDocuments(input);
-    log('parsed YAML: %o', parsed);
+    _debug('parsed YAML: %o', parsed);
     const documents = parsed.filter(document => _.isEmpty(document.errors));
-    log('no-error documents: %o', documents);
+    _debug('no-error documents: %o', documents);
     const converted = documents.map(document => document.toJSON());
-    log('converted documents: %o', converted);
+    _debug('converted documents: %o', converted);
     return converted;
   }
 }

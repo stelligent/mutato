@@ -4,7 +4,7 @@ import _ from 'lodash';
 import { Loader } from './loader';
 import { PreProcessor } from './preprocessor';
 
-const log = debug('mu:parser:Parser');
+const _debug = debug('mu:parser:Parser');
 export type MuEnvironmentSpecMap = Map<string, MuEnvironmentSpec>;
 export interface MuEnvironmentSpec {
   environment?: object;
@@ -26,34 +26,34 @@ export class Parser {
    * @param input mu.yml as a string
    */
   public parse(input: string): MuEnvironmentSpecMap {
-    log('attempting to parse mu.yml string: %s', input);
-    log('going for the first pass, extracting environments');
+    _debug('attempting to parse mu.yml string: %s', input);
+    _debug('going for the first pass, extracting environments');
 
     // during the first pass, we just want to figure out what environments we
     // are targeting. in this pass, environment-specific configuration is not
     // supported. we just want to extract "environments:" section.
     const environmentLoader = new Loader();
     const environmentPreprocessor = new PreProcessor({ environment: '' });
-    log('first pass preprocessing the YAML string to look for environments');
+    _debug('first pass preprocessing the YAML string to look for environments');
     const firstPassYaml = environmentPreprocessor.render(input);
-    log('first pass loading the YAML string to look for environments');
+    _debug('first pass loading the YAML string to look for environments');
     const firstPassParsed = environmentLoader.load(firstPassYaml);
-    log('looking for an environment tag');
+    _debug('looking for an environment tag');
     const environments = firstPassParsed.filter(tags =>
       _.isObject(_.get(tags, 'environments'))
     );
     assert.ok(environments.length <= 1, 'too many environment tags specified');
-    log('extracting the environment tag');
+    _debug('extracting the environment tag');
     const environmentTag = _.isEmpty(environments)
       ? { environments: ['development'] } // default environment
       : (_.head(environments) as object);
-    log('environment is set to: %o', environmentTag);
+    _debug('environment is set to: %o', environmentTag);
     const environmentArray = _.get(environmentTag, 'environments', []);
     assert.ok(_.isArray(environmentArray) && !_.isEmpty(environmentArray));
     const environmentKeys = environmentArray.map((e: object | string) =>
       _.isObject(e) ? _.head(_.keys(e)) : e
     );
-    log('environment keys: %o', environmentKeys);
+    _debug('environment keys: %o', environmentKeys);
 
     const resources = new Map<string, MuEnvironmentSpec>();
 
@@ -63,11 +63,15 @@ export class Parser {
       assert.ok(_.isString(key));
       const environmentLoader = new Loader();
       const environmentPreprocessor = new PreProcessor({ environment: key });
-      log('second pass preprocessing the YAML string to look for environments');
+      _debug(
+        'second pass preprocessing the YAML string to look for environments'
+      );
       const yaml = environmentPreprocessor.render(input);
-      log('second pass loading the YAML string to look for non-environments');
+      _debug(
+        'second pass loading the YAML string to look for non-environments'
+      );
       const parsed = environmentLoader.load(yaml);
-      log('looking for non-environment tags');
+      _debug('looking for non-environment tags');
       const nonEnvironments = parsed.filter(
         tags => !_.isObject(_.get(tags, 'environments'))
       );

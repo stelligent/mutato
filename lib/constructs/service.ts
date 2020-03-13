@@ -30,18 +30,18 @@ interface ServiceProps {
 /** ECS service construct */
 export class Service extends cdk.Construct {
   public readonly props: ServiceProps;
-  private readonly log: debug.Debugger;
+  private readonly _debug: debug.Debugger;
 
   /** @hideconstructor */
   constructor(scope: cdk.Construct, id: string, props: ServiceProps) {
     super(scope, id);
 
-    this.log = debug(`mu:constructs:service:${id}`);
+    this._debug = debug(`mu:constructs:service:${id}`);
     this.props = _.defaults(props, {
       provider: ServiceProvider.FARGATE
     });
 
-    this.log('creating a service construct with props: %o', this.props);
+    this._debug('creating a service construct with props: %o', this.props);
     assert.ok(_.isString(this.props.provider));
     assert.ok(_.isObject(this.props.container));
     assert.ok(_.isObject(this.props.network));
