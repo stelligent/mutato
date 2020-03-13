@@ -112,7 +112,7 @@ export class Container extends cdk.Construct {
 
     this._repo?.grantPullPush(project);
     const buildAction = new codePipelineActions.CodeBuildAction({
-      actionName: `container-build--${this.node.id}`,
+      actionName: `container-build-${this.node.id}`,
       input: source,
       project
     });
