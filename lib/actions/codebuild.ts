@@ -60,7 +60,7 @@ export class CodeBuild implements ActionInterface {
       }
     );
 
-    this._props.container?.repo?.grantPull(project);
+    this._props.container?.repo?.grantPullPush(project);
     const action = new codePipelineActions.CodeBuildAction({
       actionName: this._props.name,
       runOrder: this._props.order,
