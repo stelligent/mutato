@@ -1,3 +1,4 @@
+import * as codeBuild from '@aws-cdk/aws-codebuild';
 import * as codePipeline from '@aws-cdk/aws-codepipeline';
 import { config } from '../config';
 import { Container } from '../resources/container';
@@ -17,7 +18,7 @@ export class DockerBuild extends CodeBuild {
     super({
       ...props,
       privileged: true,
-      container: undefined, // undef to set to CodeBuild standard image 2.0
+      buildImage: codeBuild.LinuxBuildImage.STANDARD_2_0,
       spec: {
         version: 0.2,
         phases: {

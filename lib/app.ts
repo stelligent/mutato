@@ -155,10 +155,10 @@ export class App extends cdk.App {
 
     const containerSpecs = _.head(Array.from(obj.values()))?.containers;
     this._debug('containers gathered: %o', containerSpecs);
-    const containers = _.map(containerSpecs, container => {
-      const type = _.head(_.keys(container)) as string;
+    const containers = _.map(containerSpecs, containerSpec => {
+      const type = _.head(_.keys(containerSpec)) as string;
       assert.ok(type === 'docker');
-      const prop = _.get(container, type);
+      const prop = _.get(containerSpec, type);
       const name = _.get(prop, 'name', 'default');
       const construct = new Container(pipelineStack, name, prop);
       return construct;

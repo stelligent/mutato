@@ -12,6 +12,7 @@ import { ActionInterface, ActionPropsInterface } from './interface';
 const _debug = debug('mu:actions:CodeBuild');
 
 interface CodeBuildProps extends ActionPropsInterface {
+  buildImage?: codeBuild.IBuildImage;
   container?: Container;
   pipeline: codePipeline.Pipeline;
   source: codePipeline.Artifact;
@@ -39,15 +40,17 @@ export class CodeBuild implements ActionInterface {
       `action-project-${this._props.name}`,
       {
         environment: {
-          buildImage: this._props.container
+          buildImage: this._props.buildImage
+            ? this._props.buildImage
+            : this._props.container
             ? this._props.container.repo
               ? codeBuild.LinuxBuildImage.fromEcrRepository(
                   this._props.container.repo
                 )
               : codeBuild.LinuxBuildImage.fromDockerRegistry(
-                  this._props.container.getImageUri()
+                  this._props.container?.getImageUri()
                 )
-            : codeBuild.LinuxBuildImage.STANDARD_2_0,
+            : undefined,
           environmentVariables: config.toBuildEnvironmentMap(),
           privileged: this._props.privileged
         },
