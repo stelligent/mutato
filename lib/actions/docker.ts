@@ -35,7 +35,7 @@ interface DockerRunProps extends ActionPropsInterface {
   container: Container;
   pipeline: codePipeline.Pipeline;
   source: codePipeline.Artifact;
-  privileged: boolean;
+  privileged?: boolean;
   args?: string;
   env?: { [key: string]: string };
   cmd: string;

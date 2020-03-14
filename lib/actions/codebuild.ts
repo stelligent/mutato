@@ -16,7 +16,7 @@ interface CodeBuildProps extends ActionPropsInterface {
   pipeline: codePipeline.Pipeline;
   source: codePipeline.Artifact;
   spec: object | string;
-  privileged: boolean;
+  privileged?: boolean;
 }
 
 /** manual approval action in the pipeline */
