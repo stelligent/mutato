@@ -8,6 +8,7 @@ import debug from 'debug';
 import fs from 'fs';
 import _ from 'lodash';
 import path from 'path';
+import * as Actions from './actions';
 import { config } from './config';
 import { MuEnvironmentSpecMap, Parser } from './parser';
 import { Container } from './resources/container';
@@ -169,7 +170,12 @@ export class App extends cdk.App {
       const containersStage = pipeline.addStage({ stageName: 'Mu-Containers' });
       pipelineContainers.forEach(container =>
         containersStage.addAction(
-          container.createBuildAction(githubSource, pipeline)
+          new Actions.DockerBuild({
+            name: `build-${container.node.id}`,
+            source: githubSource,
+            container,
+            pipeline
+          }).action
         )
       );
     }

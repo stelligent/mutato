@@ -1,6 +1,3 @@
-import * as codeBuild from '@aws-cdk/aws-codebuild';
-import * as codePipeline from '@aws-cdk/aws-codepipeline';
-import * as codePipelineActions from '@aws-cdk/aws-codepipeline-actions';
 import * as ecr from '@aws-cdk/aws-ecr';
 import * as cdk from '@aws-cdk/core';
 import * as assert from 'assert';
@@ -87,43 +84,6 @@ export class Container extends cdk.Construct {
       const uri = `${stack.account}.dkr.ecr.${stack.region}.${stack.urlSuffix}/${this._repositoryName}`;
       return this.repo ? uri : (this.props.uri as string);
     } else return this.props.uri as string;
-  }
-
-  /** @returns a CodeBuild action that can be embedded inside a CodePipeline */
-  createBuildAction(
-    source: codePipeline.Artifact,
-    pipeline: codePipeline.Pipeline
-  ): codePipelineActions.CodeBuildAction {
-    assert.ok(this.needsBuilding, 'container is not part of the pipeline');
-    const project = new codeBuild.PipelineProject(
-      cdk.Stack.of(pipeline),
-      `container-project-${this.node.id}`,
-      {
-        environment: {
-          privileged: true,
-          buildImage: codeBuild.LinuxBuildImage.STANDARD_2_0,
-          environmentVariables: config.toBuildEnvironmentMap()
-        },
-        buildSpec: codeBuild.BuildSpec.fromObject({
-          version: 0.2,
-          phases: {
-            install: { 'runtime-versions': { docker: 18 } },
-            pre_build: { commands: [this.loginCommand] },
-            build: { commands: [this.buildCommand] },
-            post_build: { commands: [this.pushCommand] }
-          }
-        })
-      }
-    );
-
-    this.repo?.grantPullPush(project);
-    const buildAction = new codePipelineActions.CodeBuildAction({
-      actionName: `container-build-${this.node.id}`,
-      input: source,
-      project
-    });
-
-    return buildAction;
   }
 
   /** @returns shell command containing "docker login" */
