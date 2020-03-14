@@ -6,5 +6,5 @@ export interface ActionPropsInterface {
 }
 
 export interface ActionInterface {
-  create(props: ActionPropsInterface): codePipeline.IAction;
+  readonly action: codePipeline.IAction;
 }

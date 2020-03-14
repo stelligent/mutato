@@ -19,6 +19,12 @@ interface ContainerProps {
   uri?: string;
 }
 
+interface ContainerRunProps {
+  args?: string;
+  env?: { [key: string]: string };
+  cmd: string;
+}
+
 /**
  * a construct abstracting a single Dockerfile. This class does not participate
  * in authentication, building, or pushing the actual image of the container.
@@ -126,13 +132,15 @@ export class Container extends cdk.Construct {
     const region = cdk.Stack.of(this).region;
     return this.repo
       ? `$(aws ecr get-login --no-include-email --region ${region})`
-      : `docker login -u ${config.opts.docker.user} -p ${config.opts.docker.pass}`;
+      : config.opts.docker.user && config.opts.docker.pass
+      ? `docker login -u ${config.opts.docker.user} -p ${config.opts.docker.pass}`
+      : 'echo "skipping docker login (credentials not provided)"';
   }
 
   /** @returns shell command containing "docker build" */
   get buildCommand(): string {
     assert.ok(this.needsBuilding, 'container is not part of the pipeline');
-    const buildArg = _.reduce(
+    const buildArgs = _.reduce(
       this.props.buildArgs,
       (accumulate, value, key) => `${accumulate} --build-arg ${key}="${value}"`,
       ''
@@ -140,12 +148,24 @@ export class Container extends cdk.Construct {
     const f = this.props.file;
     const t = this.getImageUri();
     // TODO: escape for shell args here to prevent shell attacks
-    return `docker build ${buildArg} -t ${t} -f ${f} ${this.props.context}`;
+    return `docker build ${buildArgs} -t ${t} -f ${f} ${this.props.context}`;
   }
 
   /** @returns shell command containing "docker push" */
   get pushCommand(): string {
     assert.ok(this.needsBuilding, 'container is not part of the pipeline');
     return `docker push ${this.getImageUri()}`;
+  }
+
+  /** @returns shell command containing "docker run" */
+  runCommand(props: ContainerRunProps): string {
+    props = _.defaults(props, { args: '-t --rm --init' });
+    const envArgs = _.reduce(
+      this.props.buildArgs,
+      (accumulate, value, key) => `${accumulate} -e ${key}="${value}"`,
+      ''
+    ).trim();
+    props.args += envArgs;
+    return `docker run ${props.args} ${this.getImageUri()} ${props.cmd}`;
   }
 }

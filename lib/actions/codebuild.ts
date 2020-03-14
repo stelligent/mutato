@@ -2,16 +2,17 @@ import * as codeBuild from '@aws-cdk/aws-codebuild';
 import * as codePipeline from '@aws-cdk/aws-codepipeline';
 import * as codePipelineActions from '@aws-cdk/aws-codepipeline-actions';
 import * as cdk from '@aws-cdk/core';
+import assert from 'assert';
 import debug from 'debug';
 import _ from 'lodash';
 import { config } from '../config';
 import { Container } from '../resources/container';
 import { ActionInterface, ActionPropsInterface } from './interface';
 
-const _debug = debug('mu:actions:Approval');
+const _debug = debug('mu:actions:CodeBuild');
 
 interface CodeBuildProps extends ActionPropsInterface {
-  container: Container;
+  container?: Container;
   pipeline: codePipeline.Pipeline;
   source: codePipeline.Artifact;
   spec: object | string;
@@ -20,33 +21,47 @@ interface CodeBuildProps extends ActionPropsInterface {
 
 /** manual approval action in the pipeline */
 export class CodeBuild implements ActionInterface {
+  private readonly _props: CodeBuildProps;
+
+  /** @hideconstructor */
+  constructor(props: CodeBuildProps) {
+    this._props = _.defaults(props, { order: 1, privileged: false });
+    assert.ok(this._props.pipeline);
+    assert.ok(this._props.source);
+    assert.ok(this._props.spec);
+  }
+
   /** creates a manual approval action in the pipeline */
-  create(props: CodeBuildProps): codePipelineActions.CodeBuildAction {
-    _debug('creating a code build action with props: %o', props);
+  get action(): codePipelineActions.CodeBuildAction {
+    _debug('creating a code build action with props: %o', this._props);
     const project = new codeBuild.PipelineProject(
-      cdk.Stack.of(props.pipeline),
-      `action-project-${props.name}`,
+      cdk.Stack.of(this._props.pipeline),
+      `action-project-${this._props.name}`,
       {
         environment: {
-          buildImage: props.container.repo
-            ? codeBuild.LinuxBuildImage.fromEcrRepository(props.container.repo)
-            : codeBuild.LinuxBuildImage.fromDockerRegistry(
-                props.container.getImageUri()
-              ),
+          buildImage: this._props.container
+            ? this._props.container.repo
+              ? codeBuild.LinuxBuildImage.fromEcrRepository(
+                  this._props.container.repo
+                )
+              : codeBuild.LinuxBuildImage.fromDockerRegistry(
+                  this._props.container.getImageUri()
+                )
+            : codeBuild.LinuxBuildImage.STANDARD_2_0,
           environmentVariables: config.toBuildEnvironmentMap(),
-          privileged: props.privileged
+          privileged: this._props.privileged
         },
-        buildSpec: _.isObject(props.spec)
-          ? codeBuild.BuildSpec.fromObject(props.spec)
-          : codeBuild.BuildSpec.fromSourceFilename(props.spec)
+        buildSpec: _.isObject(this._props.spec)
+          ? codeBuild.BuildSpec.fromObject(this._props.spec)
+          : codeBuild.BuildSpec.fromSourceFilename(this._props.spec)
       }
     );
 
-    props.container.repo?.grantPull(project);
+    this._props.container?.repo?.grantPull(project);
     const action = new codePipelineActions.CodeBuildAction({
-      actionName: props.name,
-      runOrder: props.order,
-      input: props.source,
+      actionName: this._props.name,
+      runOrder: this._props.order,
+      input: this._props.source,
       project
     });
 

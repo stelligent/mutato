@@ -1,5 +1,7 @@
 import * as codePipelineActions from '@aws-cdk/aws-codepipeline-actions';
+import assert from 'assert';
 import debug from 'debug';
+import _ from 'lodash';
 import { config } from '../config';
 import { ActionInterface, ActionPropsInterface } from './interface';
 
@@ -11,15 +13,23 @@ interface ApprovalProps extends ActionPropsInterface {
 
 /** manual approval action in the pipeline */
 export class Approval implements ActionInterface {
+  private readonly _props: ApprovalProps;
+
+  /** @hideconstructor */
+  constructor(props: ApprovalProps) {
+    this._props = _.defaults(props, { order: 1 });
+    assert.ok(this._props.name);
+  }
+
   /** creates a manual approval action in the pipeline */
-  create(props: ApprovalProps): codePipelineActions.ManualApprovalAction {
-    _debug('creating a manual approval with props: %o', props);
+  get action(): codePipelineActions.ManualApprovalAction {
+    _debug('creating a manual approval with props: %o', this._props);
     const git = config.getGithubMetaData();
     return new codePipelineActions.ManualApprovalAction({
-      runOrder: props.order,
-      actionName: props.name,
-      notifyEmails: props?.emails,
-      additionalInformation: props?.emails
+      runOrder: this._props.order,
+      actionName: this._props.name,
+      notifyEmails: this._props?.emails,
+      additionalInformation: this._props?.emails
         ? [
             'an approval action in a Mutato pipeline needs your attention.',
             `repository: ${git.repo}. branch: ${git.branch}.`,
