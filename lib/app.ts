@@ -154,7 +154,7 @@ export class App extends cdk.App {
     });
 
     const containerSpecs = _.head(Array.from(obj.values()))?.containers;
-    this._debug('containers gathered: %o', containerSpecs);
+    this._debug('containers specs: %o', containerSpecs);
     const containers = _.map(containerSpecs, containerSpec => {
       const type = _.head(_.keys(containerSpec)) as string;
       assert.ok(type === 'docker');
@@ -163,6 +163,51 @@ export class App extends cdk.App {
       const construct = new Container(pipelineStack, name, prop);
       return construct;
     }) as Container[];
+    const queryContainer = (
+      nameOrUri: string,
+      requester: string
+    ): Container => {
+      this._debug('resolving container: %s', nameOrUri);
+      const container = _.find(containers, c => c.node.id === nameOrUri);
+      return container
+        ? container
+        : new Container(pipelineStack, `volatile-${requester}-${nameOrUri}`, {
+            uri: nameOrUri
+          });
+    };
+
+    const actionSpecs = _.head(Array.from(obj.values()))?.actions;
+    this._debug('action specs: %o', actionSpecs);
+    const actions = _.map(actionSpecs, actionSpec => {
+      const type = _.head(_.keys(actionSpec)) as string;
+      const prop = _.get(actionSpec, type);
+      const name = _.get(prop, 'name', `default-action-${type}`);
+      switch (type) {
+        case 'docker':
+          return new Actions.DockerRun({
+            name,
+            ...prop,
+            pipeline,
+            source: githubSource,
+            container: queryContainer(prop.container, name)
+          });
+        case 'codebuild':
+          return new Actions.CodeBuild({
+            name,
+            ...prop,
+            pipeline,
+            source: githubSource,
+            container: _.isString(prop.container)
+              ? queryContainer(prop.container, name)
+              : undefined
+          });
+        case 'approval':
+          return new Actions.Approval({ name, ...prop });
+        default:
+          assert.fail(`action type not supported: ${type}`);
+      }
+    }).map(construct => construct.action);
+
     this._debug('checking to see if we have any containers to build');
     const pipelineContainers = containers.filter(c => c.needsBuilding);
     if (pipelineContainers.length > 0) {
@@ -196,19 +241,6 @@ export class App extends cdk.App {
             c => _.head(_.keys(c)) === type
           ) as object[]).map(c => _.get(c, type))
         );
-
-      const queryContainer = (
-        nameOrUri: string,
-        requester: string
-      ): Container => {
-        this._debug('resolving container: %s', nameOrUri);
-        const container = _.find(containers, c => c.node.id === nameOrUri);
-        return container
-          ? container
-          : new Container(pipelineStack, `volatile-${requester}-${nameOrUri}`, {
-              uri: nameOrUri
-            });
-      };
 
       const networkSpecs = queryConstruct('network');
       assert.ok(networkSpecs.length <= 1);
