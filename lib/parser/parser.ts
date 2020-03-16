@@ -10,18 +10,16 @@ const _debug = debug('mu:parser:Parser');
 type ActionSpec = object;
 type ResourceSpec = object;
 type ContainerSpec = object;
-type EnvironmentSpec = object | string;
 export interface MuSpec {
   actions: ActionSpec[];
   containers: ContainerSpec[];
-  environments: Map<EnvironmentSpec, ResourceSpec[]>;
+  environments: Map<string, ResourceSpec[]>;
 }
 
 /**
  * mu.yml parser
  *
  * this class glues all the components for the parser together
- * @todo "containers" and "actions" cannot be environment specific, handle it
  */
 export class Parser {
   /**
@@ -62,11 +60,12 @@ export class Parser {
     const envSpecs = queryRootTag('environments', parsed, ['development']);
     _debug('environments %o', envSpecs);
 
-    const environments = new Map<EnvironmentSpec, ResourceSpec[]>();
+    const environments = new Map<string, ResourceSpec[]>();
 
     // second pass parsing to create environment specific resources
-    envSpecs.forEach((env: EnvironmentSpec) => {
+    envSpecs.forEach((env: object) => {
       const key = (_.isObject(env) ? _.head(_.keys(env)) : env) as string;
+      const tag = _.isObject(env) ? _.get(env, key) : {};
       assert.ok(_.isString(key));
       const environmentLoader = new Loader();
       const environmentPreprocessor = new PreProcessor({ environment: key });
@@ -75,8 +74,9 @@ export class Parser {
       const parsed = environmentLoader.load(yaml);
       _debug('second pass parsed YAML: %o', parsed);
       const resources = queryRootTag('resources', parsed);
+      resources.push({ environment: { ...tag } });
       _debug('resources for environment "%s": %o', key, resources);
-      environments.set(env, resources);
+      environments.set(key, resources);
     });
 
     return {
