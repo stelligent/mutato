@@ -22,11 +22,11 @@ export class Approval implements ActionInterface {
   }
 
   /** creates a manual approval action in the pipeline */
-  get action(): codePipelineActions.ManualApprovalAction {
+  action(runOrder: number): codePipelineActions.ManualApprovalAction {
     _debug('creating a manual approval with props: %o', this._props);
     const git = config.getGithubMetaData();
     return new codePipelineActions.ManualApprovalAction({
-      runOrder: this._props.order,
+      runOrder,
       actionName: this._props.name,
       notifyEmails: this._props?.emails,
       additionalInformation: this._props?.emails
