@@ -206,23 +206,46 @@ export class App extends cdk.App {
         default:
           assert.fail(`action type not supported: ${type}`);
       }
-    }).map(construct => construct.action);
+    });
 
     this._debug('checking to see if we have any containers to build');
     const pipelineContainers = containers.filter(c => c.needsBuilding);
     if (pipelineContainers.length > 0) {
       this._debug('we are building containers, add its stage');
       const containersStage = pipeline.addStage({ stageName: 'Mu-Containers' });
-      pipelineContainers.forEach(container =>
+      pipelineContainers.forEach(container => {
+        const events = _.get(
+          containerSpecs.find(containerSpec => {
+            const type = _.head(_.keys(containerSpec)) as string;
+            assert.ok(type === 'docker');
+            const prop = _.get(containerSpec, type);
+            const name = _.get(prop, 'name', 'default');
+            return name === container.node.id;
+          }) || {},
+          'events',
+          {}
+        );
+        const preBuild = actions.find(
+          factory =>
+            factory.action(1).actionProperties.actionName ===
+            _.get(events, 'pre-build', '')
+        );
+        if (preBuild) containersStage.addAction(preBuild.action(1));
         containersStage.addAction(
           new Actions.DockerBuild({
             name: `build-${container.node.id}`,
             source: githubSource,
             container,
             pipeline
-          }).action
-        )
-      );
+          }).action(2)
+        );
+        const postBuild = actions.find(
+          factory =>
+            factory.action(3).actionProperties.actionName ===
+            _.get(events, 'post-build', '')
+        );
+        if (postBuild) containersStage.addAction(postBuild.action(3));
+      });
     }
 
     Array.from(spec.environments.keys()).forEach(envName => {
@@ -259,7 +282,25 @@ export class App extends cdk.App {
         });
       });
 
+      const events = _.get(environment || {}, 'events', {});
+      const preDeploy = actions.find(
+        factory =>
+          factory.action(1).actionProperties.actionName ===
+          _.get(events, 'pre-deploy', '')
+      );
+      const postDeploy = actions.find(
+        factory =>
+          factory.action(3).actionProperties.actionName ===
+          _.get(events, 'post-deploy', '')
+      );
+
       this._debug('adding environment deploy stage');
+      if (preDeploy) {
+        pipeline.addStage({
+          stageName: `Mu-Pre-Deploy-${envName}`,
+          actions: [preDeploy.action(1)]
+        });
+      }
       pipeline.addStage({
         stageName: `Mu-Deploy-${envName}`,
         actions: [
@@ -270,6 +311,12 @@ export class App extends cdk.App {
           })
         ]
       });
+      if (postDeploy) {
+        pipeline.addStage({
+          stageName: `Mu-Post-Deploy-${envName}`,
+          actions: [postDeploy.action(1)]
+        });
+      }
     });
   }
 }
