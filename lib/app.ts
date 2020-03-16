@@ -10,7 +10,7 @@ import _ from 'lodash';
 import path from 'path';
 import * as Actions from './actions';
 import { config } from './config';
-import { MuEnvironmentSpecMap, Parser } from './parser';
+import { MuSpec, Parser } from './parser';
 import { Container } from './resources/container';
 import { Network } from './resources/network';
 import { Service } from './resources/service';
@@ -45,17 +45,17 @@ export class App extends cdk.App {
   public async synthesizeFromString(string: string): Promise<void> {
     this._debug('synthesizing Mu app from string: %s', string);
     const muYmlObject = this._parser.parse(string);
-    await this.synthesizeFromObject(muYmlObject as MuEnvironmentSpecMap);
+    await this.synthesizeFromObject(muYmlObject as MuSpec);
   }
 
   /**
    * initializes this Mu stack from a valid Mu YAML object (converted to JSON)
    *
-   * @param obj a valid Mu YAML object
+   * @param spec a valid Mu YAML object
    */
-  public async synthesizeFromObject(obj: MuEnvironmentSpecMap): Promise<void> {
-    this._debug('synthesizing Mu app from object: %o', obj);
-    assert.ok(_.isObject(obj));
+  public async synthesizeFromObject(spec: MuSpec): Promise<void> {
+    this._debug('synthesizing Mu app from object: %o', spec);
+    assert.ok(_.isObject(spec));
 
     const git = config.getGithubMetaData();
     this._debug('git meta data extracted: %o', git);
@@ -153,7 +153,7 @@ export class App extends cdk.App {
       ]
     });
 
-    const containerSpecs = _.head(Array.from(obj.values()))?.containers;
+    const containerSpecs = spec.containers;
     this._debug('containers specs: %o', containerSpecs);
     const containers = _.map(containerSpecs, containerSpec => {
       const type = _.head(_.keys(containerSpec)) as string;
@@ -176,7 +176,7 @@ export class App extends cdk.App {
           });
     };
 
-    const actionSpecs = _.head(Array.from(obj.values()))?.actions;
+    const actionSpecs = spec.actions;
     this._debug('action specs: %o', actionSpecs);
     const actions = _.map(actionSpecs, actionSpec => {
       const type = _.head(_.keys(actionSpec)) as string;
@@ -225,8 +225,16 @@ export class App extends cdk.App {
       );
     }
 
-    Array.from(obj.keys()).forEach(envName => {
-      const environment = obj.get(envName);
+    Array.from(spec.environments.keys()).forEach(envName => {
+      const queryConstruct = (type: string): object[] =>
+        _.filter(
+          (spec.environments
+            .get(envName)
+            ?.filter(c => _.head(_.keys(c)) === type) as object[]).map(c =>
+            _.get(c, type)
+          )
+        );
+      const environment = _.head(queryConstruct('environment'));
       this._debug('creating environment: %s / %o', envName, environment);
 
       this._debug('creating a stack (Mu Resources)');
@@ -234,13 +242,6 @@ export class App extends cdk.App {
         description: `application resources for environment: ${envName}`,
         stackName: `Mu-App-${envName}-${git.identifier}`
       });
-
-      const queryConstruct = (type: string): object[] =>
-        _.filter(
-          (environment?.resources?.filter(
-            c => _.head(_.keys(c)) === type
-          ) as object[]).map(c => _.get(c, type))
-        );
 
       const networkSpecs = queryConstruct('network');
       assert.ok(networkSpecs.length <= 1);
