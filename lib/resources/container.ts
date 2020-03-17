@@ -88,7 +88,6 @@ export class Container extends cdk.Construct {
 
   /** @returns shell command containing "docker login" */
   get loginCommand(): string {
-    assert.ok(this.needsBuilding, 'container is not part of the pipeline');
     const region = cdk.Stack.of(this).region;
     return this.repo
       ? `$(aws ecr get-login --no-include-email --region ${region})`
