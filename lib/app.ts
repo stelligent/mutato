@@ -254,15 +254,13 @@ export class App extends cdk.App {
             ? [preBuildEventSpecs]
             : preBuildEventSpecs) || [];
         preBuildEvents
-          .map(
-            ev =>
-              actions.find(
-                actionFactory =>
-                  actionFactory.action.actionProperties.actionName === ev
-              )?.action
-          )
-          .forEach(action =>
-            containerPreBuildStage?.addAction(action as codePipeline.IAction)
+          .map(ev => actions.find(actionFactory => actionFactory.name === ev))
+          .forEach(actionFactory =>
+            containerPreBuildStage?.addAction(
+              actionFactory?.action(
+                `${container.node.id}-pre-build`
+              ) as codePipeline.IAction
+            )
           );
 
         containersStage.addAction(
@@ -271,7 +269,7 @@ export class App extends cdk.App {
             source: githubSource,
             container,
             pipeline
-          }).action
+          }).action(container.node.id)
         );
 
         const postBuildEventSpecs = _.get(events, 'post-build') as string[];
@@ -280,15 +278,13 @@ export class App extends cdk.App {
             ? [postBuildEventSpecs]
             : postBuildEventSpecs) || [];
         postBuildEvents
-          .map(
-            ev =>
-              actions.find(
-                actionFactory =>
-                  actionFactory.action.actionProperties.actionName === ev
-              )?.action
-          )
-          .forEach(action =>
-            containerPostBuildStage?.addAction(action as codePipeline.IAction)
+          .map(ev => actions.find(actionFactory => actionFactory.name === ev))
+          .forEach(actionFactory =>
+            containerPostBuildStage?.addAction(
+              actionFactory?.action(
+                `${container.node.id}-post-build`
+              ) as codePipeline.IAction
+            )
           );
       });
     }
@@ -341,11 +337,10 @@ export class App extends cdk.App {
           stageName: `Mu-${envName}-Pre-Deploy`,
           actions: preDeployEvents.map(
             ev =>
-              actions.find(
-                actionFactory =>
-                  actionFactory.action.actionProperties.actionName === ev
-              )?.action
-          ) as codePipeline.IAction[]
+              actions
+                .find(actionFactory => actionFactory.name === ev)
+                ?.action(`${envName}-pre-deploy`) as codePipeline.IAction
+          )
         });
       }
 
@@ -375,11 +370,10 @@ export class App extends cdk.App {
           stageName: `Mu-${envName}-Post-Deploy`,
           actions: postDeployEvents.map(
             ev =>
-              actions.find(
-                actionFactory =>
-                  actionFactory.action.actionProperties.actionName === ev
-              )?.action
-          ) as codePipeline.IAction[]
+              actions
+                .find(actionFactory => actionFactory.name === ev)
+                ?.action(`${envName}-post-deploy`) as codePipeline.IAction
+          )
         });
       }
     });
