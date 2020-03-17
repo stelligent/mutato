@@ -181,7 +181,8 @@ export class App extends cdk.App {
     const actions = _.map(actionSpecs, actionSpec => {
       const type = _.head(_.keys(actionSpec)) as string;
       const prop = _.get(actionSpec, type);
-      const name = _.get(prop, 'name', `default-action-${type}`);
+      const name = _.get(prop, 'name');
+      assert.ok(name, 'actions must have a name');
       switch (type) {
         case 'docker':
           return new Actions.DockerRun({
@@ -211,8 +212,31 @@ export class App extends cdk.App {
     this._debug('checking to see if we have any containers to build');
     const pipelineContainers = containers.filter(c => c.needsBuilding);
     if (pipelineContainers.length > 0) {
-      this._debug('we are building containers, add its stage');
+      this._debug('we are building containers, adding its stages');
       const containersStage = pipeline.addStage({ stageName: 'Mu-Containers' });
+
+      const havePreBuild = !!containerSpecs.filter(
+        c => _.get(c, 'events["pre-build"]') && _.get(c, 'events["file"]')
+      )?.length;
+      this._debug('container pre build events found: %s', havePreBuild);
+      let containerPreBuildStage: codePipeline.IStage;
+      if (havePreBuild) {
+        containerPreBuildStage = pipeline.addStage({
+          stageName: 'Mu-Containers-Pre-Build'
+        });
+      }
+
+      const havePostBuild = !!containerSpecs.filter(
+        c => _.get(c, 'events["post-build"]') && _.get(c, 'events["file"]')
+      )?.length;
+      this._debug('container post build events found: %s', havePostBuild);
+      let containerPostBuildStage: codePipeline.IStage;
+      if (havePostBuild) {
+        containerPostBuildStage = pipeline.addStage({
+          stageName: 'Mu-Containers-Post-Build'
+        });
+      }
+
       pipelineContainers.forEach(container => {
         const events = _.get(
           containerSpecs.find(containerSpec => {
@@ -225,26 +249,49 @@ export class App extends cdk.App {
           'events',
           {}
         );
-        const preBuild = actions.find(
-          factory =>
-            factory.action(1).actionProperties.actionName ===
-            _.get(events, 'pre-build', '')
-        );
-        if (preBuild) containersStage.addAction(preBuild.action(1));
+
+        const preBuildEventSpecs = _.get(events, 'pre-build') as string[];
+        const preBuildEvents =
+          (_.isString(preBuildEventSpecs)
+            ? [preBuildEventSpecs]
+            : preBuildEventSpecs) || [];
+        preBuildEvents
+          .map(
+            ev =>
+              actions.find(
+                actionFactory =>
+                  actionFactory.action.actionProperties.actionName === ev
+              )?.action
+          )
+          .forEach(action =>
+            containerPreBuildStage?.addAction(action as codePipeline.IAction)
+          );
+
         containersStage.addAction(
           new Actions.DockerBuild({
             name: `build-${container.node.id}`,
             source: githubSource,
             container,
             pipeline
-          }).action(2)
+          }).action
         );
-        const postBuild = actions.find(
-          factory =>
-            factory.action(3).actionProperties.actionName ===
-            _.get(events, 'post-build', '')
-        );
-        if (postBuild) containersStage.addAction(postBuild.action(3));
+
+        const postBuildEventSpecs = _.get(events, 'post-build') as string[];
+        const postBuildEvents =
+          (_.isString(postBuildEventSpecs)
+            ? [postBuildEventSpecs]
+            : postBuildEventSpecs) || [];
+        postBuildEvents
+          .map(
+            ev =>
+              actions.find(
+                actionFactory =>
+                  actionFactory.action.actionProperties.actionName === ev
+              )?.action
+          )
+          .forEach(action =>
+            containerPostBuildStage?.addAction(action as codePipeline.IAction)
+          );
       });
     }
 
@@ -282,27 +329,31 @@ export class App extends cdk.App {
         });
       });
 
-      const events = _.get(environment || {}, 'events', {});
-      const preDeploy = actions.find(
-        factory =>
-          factory.action(1).actionProperties.actionName ===
-          _.get(events, 'pre-deploy', '')
-      );
-      const postDeploy = actions.find(
-        factory =>
-          factory.action(3).actionProperties.actionName ===
-          _.get(events, 'post-deploy', '')
-      );
-
-      this._debug('adding environment deploy stage');
-      if (preDeploy) {
+      const havePreDeploy = !!_.get(environment, 'events["pre-deploy"]');
+      if (havePreDeploy) {
+        const preDeployEventSpecs = _.get(
+          environment,
+          'events["pre-deploy"]'
+        ) as string[];
+        const preDeployEvents =
+          (_.isString(preDeployEventSpecs)
+            ? [preDeployEventSpecs]
+            : preDeployEventSpecs) || [];
         pipeline.addStage({
-          stageName: `Mu-Pre-Deploy-${envName}`,
-          actions: [preDeploy.action(1)]
+          stageName: `Mu-${envName}-Pre-Deploy`,
+          actions: preDeployEvents.map(
+            ev =>
+              actions.find(
+                actionFactory =>
+                  actionFactory.action.actionProperties.actionName === ev
+              )?.action
+          ) as codePipeline.IAction[]
         });
       }
+
+      this._debug('adding environment deploy stage');
       pipeline.addStage({
-        stageName: `Mu-Deploy-${envName}`,
+        stageName: `Mu-${envName}-Deploy`,
         actions: [
           new cicd.PipelineDeployStackAction({
             stack: envStack,
@@ -311,10 +362,26 @@ export class App extends cdk.App {
           })
         ]
       });
-      if (postDeploy) {
+
+      const havePostDeploy = !!_.get(environment, 'events["post-deploy"]');
+      if (havePostDeploy) {
+        const postDeployEventSpecs = _.get(
+          environment,
+          'events["post-deploy"]'
+        ) as string[];
+        const postDeployEvents =
+          (_.isString(postDeployEventSpecs)
+            ? [postDeployEventSpecs]
+            : postDeployEventSpecs) || [];
         pipeline.addStage({
-          stageName: `Mu-Post-Deploy-${envName}`,
-          actions: [postDeploy.action(1)]
+          stageName: `Mu-${envName}-Post-Deploy`,
+          actions: postDeployEvents.map(
+            ev =>
+              actions.find(
+                actionFactory =>
+                  actionFactory.action.actionProperties.actionName === ev
+              )?.action
+          ) as codePipeline.IAction[]
         });
       }
     });
