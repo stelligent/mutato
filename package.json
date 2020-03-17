@@ -21,6 +21,7 @@
     "docs:check": "eslint . --ext .ts",
     "docs:generate": "typedoc",
     "docs": "npm-run-all docs:*",
+    "destroy": "DEBUG='mu*' npx cdk destroy --verbose Mu-Pipeline*",
     "deploy": "DEBUG='mu*' npx cdk deploy --verbose Mu-Pipeline*",
     "synth": "DEBUG='mu*' npx cdk synth --verbose -o dist"
   },
