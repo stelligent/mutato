@@ -88,7 +88,6 @@ export class Container extends cdk.Construct {
 
   /** @returns shell command containing "docker login" */
   get loginCommand(): string {
-    assert.ok(this.needsBuilding, 'container is not part of the pipeline');
     const region = cdk.Stack.of(this).region;
     return this.repo
       ? `$(aws ecr get-login --no-include-email --region ${region})`
@@ -119,13 +118,14 @@ export class Container extends cdk.Construct {
 
   /** @returns shell command containing "docker run" */
   runCommand(props: ContainerRunProps): string {
-    props = _.defaults(props, { args: '-t --rm --init' });
-    const envArgs = _.reduce(
-      this.props.buildArgs,
+    props = _.defaults(props, {
+      args: '-t --rm -v $(pwd):/project -w /project'
+    });
+    const env = _.reduce(
+      props.env,
       (accumulate, value, key) => `${accumulate} -e ${key}="${value}"`,
       ''
     ).trim();
-    props.args += envArgs;
-    return `docker run ${props.args} ${this.getImageUri()} ${props.cmd}`;
+    return `docker run ${props.args} ${env} ${this.getImageUri()} ${props.cmd}`;
   }
 }

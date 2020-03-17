@@ -10,7 +10,7 @@ import _ from 'lodash';
 import path from 'path';
 import * as Actions from './actions';
 import { config } from './config';
-import { MuEnvironmentSpecMap, Parser } from './parser';
+import { MuSpec, Parser } from './parser';
 import { Container } from './resources/container';
 import { Network } from './resources/network';
 import { Service } from './resources/service';
@@ -45,17 +45,17 @@ export class App extends cdk.App {
   public async synthesizeFromString(string: string): Promise<void> {
     this._debug('synthesizing Mu app from string: %s', string);
     const muYmlObject = this._parser.parse(string);
-    await this.synthesizeFromObject(muYmlObject as MuEnvironmentSpecMap);
+    await this.synthesizeFromObject(muYmlObject as MuSpec);
   }
 
   /**
    * initializes this Mu stack from a valid Mu YAML object (converted to JSON)
    *
-   * @param obj a valid Mu YAML object
+   * @param spec a valid Mu YAML object
    */
-  public async synthesizeFromObject(obj: MuEnvironmentSpecMap): Promise<void> {
-    this._debug('synthesizing Mu app from object: %o', obj);
-    assert.ok(_.isObject(obj));
+  public async synthesizeFromObject(spec: MuSpec): Promise<void> {
+    this._debug('synthesizing Mu app from object: %o', spec);
+    assert.ok(_.isObject(spec));
 
     const git = config.getGithubMetaData();
     this._debug('git meta data extracted: %o', git);
@@ -153,8 +153,8 @@ export class App extends cdk.App {
       ]
     });
 
-    const containerSpecs = _.head(Array.from(obj.values()))?.containers;
-    this._debug('containers gathered: %o', containerSpecs);
+    const containerSpecs = spec.containers;
+    this._debug('containers specs: %o', containerSpecs);
     const containers = _.map(containerSpecs, containerSpec => {
       const type = _.head(_.keys(containerSpec)) as string;
       assert.ok(type === 'docker');
@@ -163,25 +163,142 @@ export class App extends cdk.App {
       const construct = new Container(pipelineStack, name, prop);
       return construct;
     }) as Container[];
+    const queryContainer = (
+      nameOrUri: string,
+      requester: string
+    ): Container => {
+      this._debug('resolving container: %s', nameOrUri);
+      const container = _.find(containers, c => c.node.id === nameOrUri);
+      return container
+        ? container
+        : new Container(pipelineStack, `volatile-${requester}-${nameOrUri}`, {
+            uri: nameOrUri
+          });
+    };
+
+    const actionSpecs = spec.actions;
+    this._debug('action specs: %o', actionSpecs);
+    const actions = _.map(actionSpecs, actionSpec => {
+      const type = _.head(_.keys(actionSpec)) as string;
+      const prop = _.get(actionSpec, type);
+      const name = _.get(prop, 'name');
+      assert.ok(name, 'actions must have a name');
+      switch (type) {
+        case 'docker':
+          return new Actions.DockerRun({
+            name,
+            ...prop,
+            pipeline,
+            source: githubSource,
+            container: queryContainer(prop.container, name)
+          });
+        case 'codebuild':
+          return new Actions.CodeBuild({
+            name,
+            ...prop,
+            pipeline,
+            source: githubSource,
+            container: _.isString(prop.container)
+              ? queryContainer(prop.container, name)
+              : undefined
+          });
+        case 'approval':
+          return new Actions.Approval({ name, ...prop });
+        default:
+          assert.fail(`action type not supported: ${type}`);
+      }
+    });
+
     this._debug('checking to see if we have any containers to build');
     const pipelineContainers = containers.filter(c => c.needsBuilding);
     if (pipelineContainers.length > 0) {
-      this._debug('we are building containers, add its stage');
+      this._debug('we are building containers, adding its stages');
       const containersStage = pipeline.addStage({ stageName: 'Mu-Containers' });
-      pipelineContainers.forEach(container =>
+
+      const havePreBuild = !!containerSpecs
+        .map(c => _.head(_.values(c)))
+        .filter(p => _.get(p, 'events["pre-build"]') && _.get(p, 'file'))
+        ?.length;
+      this._debug('container pre build events found: %s', havePreBuild);
+      let containerPreBuildStage: codePipeline.IStage;
+      if (havePreBuild) {
+        containerPreBuildStage = pipeline.addStage({
+          stageName: 'Mu-Containers-Pre-Build'
+        });
+      }
+
+      const havePostBuild = !!containerSpecs
+        .map(c => _.head(_.values(c)))
+        .filter(p => _.get(p, 'events["post-build"]') && _.get(p, 'file'))
+        ?.length;
+      this._debug('container post build events found: %s', havePostBuild);
+      let containerPostBuildStage: codePipeline.IStage;
+      if (havePostBuild) {
+        containerPostBuildStage = pipeline.addStage({
+          stageName: 'Mu-Containers-Post-Build'
+        });
+      }
+
+      pipelineContainers.forEach(container => {
+        const events = _.get(
+          containerSpecs
+            .map(c => _.head(_.values(c)))
+            .find(c => _.get(c, 'name', 'default') === container.node.id) || {},
+          'events',
+          {}
+        );
+
+        const preBuildEventSpecs = _.get(events, 'pre-build') as string[];
+        const preBuildEvents =
+          (_.isString(preBuildEventSpecs)
+            ? [preBuildEventSpecs]
+            : preBuildEventSpecs) || [];
+        preBuildEvents
+          .map(ev => actions.find(actionFactory => actionFactory.name === ev))
+          .forEach(actionFactory =>
+            containerPreBuildStage?.addAction(
+              actionFactory?.action(
+                `${container.node.id}-pre-build`
+              ) as codePipeline.IAction
+            )
+          );
+
         containersStage.addAction(
           new Actions.DockerBuild({
             name: `build-${container.node.id}`,
             source: githubSource,
             container,
             pipeline
-          }).action
-        )
-      );
+          }).action(container.node.id)
+        );
+
+        const postBuildEventSpecs = _.get(events, 'post-build') as string[];
+        const postBuildEvents =
+          (_.isString(postBuildEventSpecs)
+            ? [postBuildEventSpecs]
+            : postBuildEventSpecs) || [];
+        postBuildEvents
+          .map(ev => actions.find(actionFactory => actionFactory.name === ev))
+          .forEach(actionFactory =>
+            containerPostBuildStage?.addAction(
+              actionFactory?.action(
+                `${container.node.id}-post-build`
+              ) as codePipeline.IAction
+            )
+          );
+      });
     }
 
-    Array.from(obj.keys()).forEach(envName => {
-      const environment = obj.get(envName);
+    Array.from(spec.environments.keys()).forEach(envName => {
+      const queryConstruct = (type: string): object[] =>
+        _.filter(
+          (spec.environments
+            .get(envName)
+            ?.filter(c => _.head(_.keys(c)) === type) as object[]).map(c =>
+            _.get(c, type)
+          )
+        );
+      const environment = _.head(queryConstruct('environment'));
       this._debug('creating environment: %s / %o', envName, environment);
 
       this._debug('creating a stack (Mu Resources)');
@@ -189,26 +306,6 @@ export class App extends cdk.App {
         description: `application resources for environment: ${envName}`,
         stackName: `Mu-App-${envName}-${git.identifier}`
       });
-
-      const queryConstruct = (type: string): object[] =>
-        _.filter(
-          (environment?.resources?.filter(
-            c => _.head(_.keys(c)) === type
-          ) as object[]).map(c => _.get(c, type))
-        );
-
-      const queryContainer = (
-        nameOrUri: string,
-        requester: string
-      ): Container => {
-        this._debug('resolving container: %s', nameOrUri);
-        const container = _.find(containers, c => c.node.id === nameOrUri);
-        return container
-          ? container
-          : new Container(pipelineStack, `volatile-${requester}-${nameOrUri}`, {
-              uri: nameOrUri
-            });
-      };
 
       const networkSpecs = queryConstruct('network');
       assert.ok(networkSpecs.length <= 1);
@@ -226,9 +323,30 @@ export class App extends cdk.App {
         });
       });
 
+      const havePreDeploy = !!_.get(environment, 'events["pre-deploy"]');
+      if (havePreDeploy) {
+        const preDeployEventSpecs = _.get(
+          environment,
+          'events["pre-deploy"]'
+        ) as string[];
+        const preDeployEvents =
+          (_.isString(preDeployEventSpecs)
+            ? [preDeployEventSpecs]
+            : preDeployEventSpecs) || [];
+        pipeline.addStage({
+          stageName: `Mu-${envName}-Pre-Deploy`,
+          actions: preDeployEvents.map(
+            ev =>
+              actions
+                .find(actionFactory => actionFactory.name === ev)
+                ?.action(`${envName}-pre-deploy`) as codePipeline.IAction
+          )
+        });
+      }
+
       this._debug('adding environment deploy stage');
       pipeline.addStage({
-        stageName: `Mu-Deploy-${envName}`,
+        stageName: `Mu-${envName}-Deploy`,
         actions: [
           new cicd.PipelineDeployStackAction({
             stack: envStack,
@@ -237,6 +355,27 @@ export class App extends cdk.App {
           })
         ]
       });
+
+      const havePostDeploy = !!_.get(environment, 'events["post-deploy"]');
+      if (havePostDeploy) {
+        const postDeployEventSpecs = _.get(
+          environment,
+          'events["post-deploy"]'
+        ) as string[];
+        const postDeployEvents =
+          (_.isString(postDeployEventSpecs)
+            ? [postDeployEventSpecs]
+            : postDeployEventSpecs) || [];
+        pipeline.addStage({
+          stageName: `Mu-${envName}-Post-Deploy`,
+          actions: postDeployEvents.map(
+            ev =>
+              actions
+                .find(actionFactory => actionFactory.name === ev)
+                ?.action(`${envName}-post-deploy`) as codePipeline.IAction
+          )
+        });
+      }
     });
   }
 }

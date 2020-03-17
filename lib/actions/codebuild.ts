@@ -23,6 +23,7 @@ interface CodeBuildProps extends ActionPropsInterface {
 /** manual approval action in the pipeline */
 export class CodeBuild implements ActionInterface {
   private readonly _props: CodeBuildProps;
+  public readonly name: string;
 
   /** @hideconstructor */
   constructor(props: CodeBuildProps) {
@@ -30,14 +31,15 @@ export class CodeBuild implements ActionInterface {
     assert.ok(this._props.pipeline);
     assert.ok(this._props.source);
     assert.ok(this._props.spec);
+    this.name = this._props.name;
   }
 
   /** creates a manual approval action in the pipeline */
-  get action(): codePipelineActions.CodeBuildAction {
+  public action(requester: string): codePipelineActions.CodeBuildAction {
     _debug('creating a code build action with props: %o', this._props);
     const project = new codeBuild.PipelineProject(
       cdk.Stack.of(this._props.pipeline),
-      `action-project-${this._props.name}`,
+      `action-project-${this.name}-${requester}`,
       {
         environment: {
           buildImage: this._props.buildImage
@@ -62,8 +64,7 @@ export class CodeBuild implements ActionInterface {
 
     this._props.container?.repo?.grantPullPush(project);
     const action = new codePipelineActions.CodeBuildAction({
-      actionName: this._props.name,
-      runOrder: this._props.order,
+      actionName: `${this.name}-${requester}`,
       input: this._props.source,
       project
     });

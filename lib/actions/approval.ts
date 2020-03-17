@@ -14,20 +14,21 @@ interface ApprovalProps extends ActionPropsInterface {
 /** manual approval action in the pipeline */
 export class Approval implements ActionInterface {
   private readonly _props: ApprovalProps;
+  public readonly name: string;
 
   /** @hideconstructor */
   constructor(props: ApprovalProps) {
     this._props = _.defaults(props, { order: 1 });
     assert.ok(this._props.name);
+    this.name = this._props.name;
   }
 
   /** creates a manual approval action in the pipeline */
-  get action(): codePipelineActions.ManualApprovalAction {
+  public action(requester: string): codePipelineActions.ManualApprovalAction {
     _debug('creating a manual approval with props: %o', this._props);
     const git = config.getGithubMetaData();
     return new codePipelineActions.ManualApprovalAction({
-      runOrder: this._props.order,
-      actionName: this._props.name,
+      actionName: `${this.name}-${requester}`,
       notifyEmails: this._props?.emails,
       additionalInformation: this._props?.emails
         ? [
