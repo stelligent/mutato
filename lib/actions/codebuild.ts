@@ -33,7 +33,7 @@ export class CodeBuild implements ActionInterface {
   }
 
   /** creates a manual approval action in the pipeline */
-  action(runOrder: number): codePipelineActions.CodeBuildAction {
+  get action(): codePipelineActions.CodeBuildAction {
     _debug('creating a code build action with props: %o', this._props);
     const project = new codeBuild.PipelineProject(
       cdk.Stack.of(this._props.pipeline),
@@ -64,7 +64,6 @@ export class CodeBuild implements ActionInterface {
     const action = new codePipelineActions.CodeBuildAction({
       actionName: this._props.name,
       input: this._props.source,
-      runOrder,
       project
     });
 
