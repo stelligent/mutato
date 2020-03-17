@@ -15,7 +15,7 @@
       "request": "launch",
       "name": "Debug EntryPoint",
       "program": "${workspaceFolder}/bin/mu.ts",
-      "preLaunchTask": "tsc: build - tsconfig.json",
+      "preLaunchTask": "npm: build",
       "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "skipFiles": ["<node_internals>/**"],
       "cwd": "${workspaceFolder}",
