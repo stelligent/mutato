@@ -215,9 +215,10 @@ export class App extends cdk.App {
       this._debug('we are building containers, adding its stages');
       const containersStage = pipeline.addStage({ stageName: 'Mu-Containers' });
 
-      const havePreBuild = !!containerSpecs.filter(
-        c => _.get(c, 'events["pre-build"]') && _.get(c, 'events["file"]')
-      )?.length;
+      const havePreBuild = !!containerSpecs
+        .map(c => _.head(_.values(c)))
+        .filter(p => _.get(p, 'events["pre-build"]') && _.get(p, 'file'))
+        ?.length;
       this._debug('container pre build events found: %s', havePreBuild);
       let containerPreBuildStage: codePipeline.IStage;
       if (havePreBuild) {
@@ -226,9 +227,10 @@ export class App extends cdk.App {
         });
       }
 
-      const havePostBuild = !!containerSpecs.filter(
-        c => _.get(c, 'events["post-build"]') && _.get(c, 'events["file"]')
-      )?.length;
+      const havePostBuild = !!containerSpecs
+        .map(c => _.head(_.values(c)))
+        .filter(p => _.get(p, 'events["post-build"]') && _.get(p, 'file'))
+        ?.length;
       this._debug('container post build events found: %s', havePostBuild);
       let containerPostBuildStage: codePipeline.IStage;
       if (havePostBuild) {
@@ -239,13 +241,9 @@ export class App extends cdk.App {
 
       pipelineContainers.forEach(container => {
         const events = _.get(
-          containerSpecs.find(containerSpec => {
-            const type = _.head(_.keys(containerSpec)) as string;
-            assert.ok(type === 'docker');
-            const prop = _.get(containerSpec, type);
-            const name = _.get(prop, 'name', 'default');
-            return name === container.node.id;
-          }) || {},
+          containerSpecs
+            .map(c => _.head(_.values(c)))
+            .find(c => _.get(c, 'name', 'default') === container.node.id) || {},
           'events',
           {}
         );
