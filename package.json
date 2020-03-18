@@ -66,6 +66,7 @@
     "@aws-cdk/aws-ecr": "^1.28.0",
     "@aws-cdk/aws-ecs": "^1.28.0",
     "@aws-cdk/aws-ecs-patterns": "^1.28.0",
+    "@aws-cdk/aws-efs": "^1.28.0",
     "@aws-cdk/aws-iam": "^1.28.0",
     "@aws-cdk/core": "^1.28.0",
     "aws-cdk": "^1.28.0",
