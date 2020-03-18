@@ -1,4 +1,3 @@
-import Mu = require('../lib/mu-stack');
 import { expect as expectCDK, haveResource } from '@aws-cdk/assert';
 import * as cdk from '@aws-cdk/core';
 import { Network } from '../lib/resources/network';
@@ -8,7 +7,7 @@ describe('EFS Module Tests', function() {
   describe('EFS Simple Configuration', () => {
     it('should create EFS FileSystem with default values', () => {
       const app = new cdk.App();
-      const stack = new Mu.MuStack(app, 'FileSystemTestStack');
+      const stack = new cdk.Stack(app, 'FileSystemTestStack');
       const my_network = new Network(stack, 'EFSVPC');
 
       const myfs = new MuFileSystem(stack, 'MyFileSystem');

@@ -76,6 +76,8 @@ export class MuMountTarget extends cdk.Construct {
   ) {
     super(scope, id);
 
+    this.props = props;
+
     const subnetIds: string[] = [];
     this.props.vpc.privateSubnets.forEach((subnet, index) => {
       subnetIds.push(subnet.subnetId);
