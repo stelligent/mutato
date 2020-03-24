@@ -13,7 +13,7 @@ const _debug = debug('mu');
   .then(() => {
     _debug('synthesized with Mu.');
   })
-  .catch(err => {
+  .catch((err) => {
     _debug('failed to deploy with Mu: %o', err);
     process.exit(1);
   });

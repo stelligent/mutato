@@ -16,9 +16,9 @@ export class Loader {
     _debug('loading input YAML: %s', input);
     const parsed = yaml.parseAllDocuments(input);
     _debug('parsed YAML: %o', parsed);
-    const documents = parsed.filter(document => _.isEmpty(document.errors));
+    const documents = parsed.filter((document) => _.isEmpty(document.errors));
     _debug('no-error documents: %o', documents);
-    const converted = documents.map(document => document.toJSON());
+    const converted = documents.map((document) => document.toJSON());
     _debug('converted documents: %o', converted);
     return converted;
   }

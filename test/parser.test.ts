@@ -44,16 +44,16 @@ describe('Parser Tests', () => {
         environment: {
           events: {
             'pre-deploy': 'action-name',
-            'post-deploy': 'action-name'
-          }
-        }
-      }
+            'post-deploy': 'action-name',
+          },
+        },
+      },
     ]);
     chai.assert.deepEqual(parsed.environments.get('acceptance'), [
-      { environment: {} }
+      { environment: {} },
     ]);
     chai.assert.deepEqual(parsed.environments.get('production'), [
-      { environment: {} }
+      { environment: {} },
     ]);
   });
 
@@ -70,13 +70,13 @@ describe('Parser Tests', () => {
     chai.assert.isTrue(parsed.environments.has('production'));
     chai.assert.deepEqual(parsed.environments.get('acceptance'), [
       {
-        environment: { user: process.env.USER }
-      }
+        environment: { user: process.env.USER },
+      },
     ]);
     chai.assert.deepEqual(parsed.environments.get('production'), [
       {
-        environment: { data: process.env.USER }
-      }
+        environment: { data: process.env.USER },
+      },
     ]);
   });
 
@@ -111,32 +111,32 @@ describe('Parser Tests', () => {
     chai.assert.isTrue(parsed.environments.has('production'));
     chai.assert.deepEqual(parsed.actions, [
       { 'action-name-1': { foo: 'bar' } },
-      { 'action-name-2': { test: 'val' } }
+      { 'action-name-2': { test: 'val' } },
     ]);
     chai.assert.deepEqual(parsed.containers, [
-      { nginx: { uri: 'nginx:latest' } }
+      { nginx: { uri: 'nginx:latest' } },
     ]);
     chai.assert.deepEqual(parsed.environments.get('acceptance'), [
       {
         service: {
           name: 'web-server-acceptance',
           provider: 'fargate',
-          container: 'nginx'
-        }
+          container: 'nginx',
+        },
       },
       { network: { cluster: { maxAzs: 1 } } },
-      { environment: {} }
+      { environment: {} },
     ]);
     chai.assert.deepEqual(parsed.environments.get('production'), [
       {
         service: {
           name: 'web-server-production',
           provider: 'fargate',
-          container: 'nginx'
-        }
+          container: 'nginx',
+        },
       },
       { network: { cluster: { maxAzs: 3 } } },
-      { environment: {} }
+      { environment: {} },
     ]);
   });
 });

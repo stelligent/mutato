@@ -1,6 +1,6 @@
 import {
   BuildEnvironmentVariable,
-  BuildEnvironmentVariableType
+  BuildEnvironmentVariableType,
 } from '@aws-cdk/aws-codebuild';
 import assert from 'assert';
 import cp from 'child_process';
@@ -41,15 +41,15 @@ export const config = rcTyped('mu', {
       branch: cp
         .execSync(gitBranchCmd, { encoding: 'utf8', timeout: 1000 })
         .trim(),
-      secret: _.get(process.env, 'GITHUB_TOKEN', '')
+      secret: _.get(process.env, 'GITHUB_TOKEN', ''),
     },
     docker: {
       user: _.get(process.env, 'DOCKER_USERNAME', ''),
-      pass: _.get(process.env, 'DOCKER_PASSWORD', '')
+      pass: _.get(process.env, 'DOCKER_PASSWORD', ''),
     },
     preprocessor: {
-      timeout: '10s'
-    }
+      timeout: '10s',
+    },
   },
   getGithubMetaData() {
     const meta = parseGithubUrl(this.opts.git.remote);
@@ -66,11 +66,11 @@ export const config = rcTyped('mu', {
       owner: meta?.owner as string,
       branch: this.opts.git.branch,
       /** this can be used in CDK names and IDs to uniquely ID a resource */
-      identifier: id
+      identifier: id,
     };
   },
   toStringEnvironmentMap() {
-    return traverse(this).reduce(function(acc, x) {
+    return traverse(this).reduce(function (acc, x) {
       if (this.isLeaf && this.key !== '_' && !_.isFunction(x))
         acc[`mu_${this.path.join('__')}`] = `${x}`;
       return acc;
@@ -82,12 +82,12 @@ export const config = rcTyped('mu', {
       (result: BuildEnvironmentVariableMap, value, key) => {
         result[key] = {
           type: BuildEnvironmentVariableType.PLAINTEXT,
-          value
+          value,
         };
       },
-      {}
+      {},
     );
-  }
+  },
 });
 
 log('Mu configuration: %o', config.toStringEnvironmentMap());

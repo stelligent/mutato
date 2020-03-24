@@ -63,12 +63,12 @@ export class App extends cdk.App {
     this._debug('creating a stack (Mu Pipeline)');
     const pipelineStack = new cdk.Stack(this, 'MuPipeline', {
       description: 'pipeline that manages deploy of mu.yml resources',
-      stackName: `Mu-Pipeline-${git.identifier}`
+      stackName: `Mu-Pipeline-${git.identifier}`,
     });
 
     this._debug('creating a CodePipeline to manage Mu resources');
     const pipeline = new codePipeline.Pipeline(pipelineStack, 'pipeline', {
-      restartExecutionOnUpdate: true
+      restartExecutionOnUpdate: true,
     });
 
     this._debug('creating an artifact to store Github source');
@@ -81,12 +81,12 @@ export class App extends cdk.App {
       repo: git.repo,
       branch: git.branch,
       /** @todo add SSM here to read github token from */
-      oauthToken: cdk.SecretValue.plainText(config.opts.git.secret)
+      oauthToken: cdk.SecretValue.plainText(config.opts.git.secret),
     });
     this._debug('adding Github action to the pipeline');
     pipeline.addStage({
       stageName: 'Mu-Source',
-      actions: [source]
+      actions: [source],
     });
 
     this._debug('freezing the list of env vars to send to CodeBuild');
@@ -96,16 +96,16 @@ export class App extends cdk.App {
       ...config.toBuildEnvironmentMap(),
       USER: {
         type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-        value: 'root'
+        value: 'root',
       },
       DEBUG: {
         type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-        value: 'mu*'
+        value: 'mu*',
       },
       DEBUG_COLORS: {
         type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-        value: '0'
-      }
+        value: '0',
+      },
     };
     this._debug('environment of CodeBuild: %o', environmentVariables);
 
@@ -113,16 +113,16 @@ export class App extends cdk.App {
     const project = new codeBuild.PipelineProject(pipelineStack, 'build', {
       environment: {
         buildImage: codeBuild.LinuxBuildImage.fromDockerRegistry('node:lts'),
-        environmentVariables
+        environmentVariables,
       },
       buildSpec: codeBuild.BuildSpec.fromObject({
         version: 0.2,
         phases: {
           install: { commands: ['npm install'] },
-          build: { commands: ['npm run synth'] }
+          build: { commands: ['npm run synth'] },
         },
-        artifacts: { 'base-directory': 'dist', files: '**/*' }
-      })
+        artifacts: { 'base-directory': 'dist', files: '**/*' },
+      }),
     });
 
     this._debug('creating an artifact to store synthesized self');
@@ -132,13 +132,13 @@ export class App extends cdk.App {
       actionName: 'CodeBuild',
       project,
       input: githubSource,
-      outputs: [synthesizedApp]
+      outputs: [synthesizedApp],
     });
 
     this._debug('adding self build action to the pipeline');
     pipeline.addStage({
       stageName: 'Mu-Synthesize',
-      actions: [buildAction]
+      actions: [buildAction],
     });
 
     this._debug('adding a self update stage');
@@ -148,14 +148,14 @@ export class App extends cdk.App {
         new cicd.PipelineDeployStackAction({
           stack: pipelineStack,
           input: synthesizedApp,
-          adminPermissions: true
-        })
-      ]
+          adminPermissions: true,
+        }),
+      ],
     });
 
     const containerSpecs = spec.containers;
     this._debug('containers specs: %o', containerSpecs);
-    const containers = _.map(containerSpecs, containerSpec => {
+    const containers = _.map(containerSpecs, (containerSpec) => {
       const type = _.head(_.keys(containerSpec)) as string;
       assert.ok(type === 'docker');
       const prop = _.get(containerSpec, type);
@@ -165,20 +165,20 @@ export class App extends cdk.App {
     }) as Container[];
     const queryContainer = (
       nameOrUri: string,
-      requester: string
+      requester: string,
     ): Container => {
       this._debug('resolving container: %s', nameOrUri);
-      const container = _.find(containers, c => c.node.id === nameOrUri);
+      const container = _.find(containers, (c) => c.node.id === nameOrUri);
       return container
         ? container
         : new Container(pipelineStack, `volatile-${requester}-${nameOrUri}`, {
-            uri: nameOrUri
+            uri: nameOrUri,
           });
     };
 
     const actionSpecs = spec.actions;
     this._debug('action specs: %o', actionSpecs);
-    const actions = _.map(actionSpecs, actionSpec => {
+    const actions = _.map(actionSpecs, (actionSpec) => {
       const type = _.head(_.keys(actionSpec)) as string;
       const prop = _.get(actionSpec, type);
       const name = _.get(prop, 'name');
@@ -190,7 +190,7 @@ export class App extends cdk.App {
             ...prop,
             pipeline,
             source: githubSource,
-            container: queryContainer(prop.container, name)
+            container: queryContainer(prop.container, name),
           });
         case 'codebuild':
           return new Actions.CodeBuild({
@@ -200,7 +200,7 @@ export class App extends cdk.App {
             source: githubSource,
             container: _.isString(prop.container)
               ? queryContainer(prop.container, name)
-              : undefined
+              : undefined,
           });
         case 'approval':
           return new Actions.Approval({ name, ...prop });
@@ -210,42 +210,43 @@ export class App extends cdk.App {
     });
 
     this._debug('checking to see if we have any containers to build');
-    const pipelineContainers = containers.filter(c => c.needsBuilding);
+    const pipelineContainers = containers.filter((c) => c.needsBuilding);
     if (pipelineContainers.length > 0) {
       this._debug('we are building containers, adding its stages');
       const containersStage = pipeline.addStage({ stageName: 'Mu-Containers' });
 
       const havePreBuild = !!containerSpecs
-        .map(c => _.head(_.values(c)))
-        .filter(p => _.get(p, 'events["pre-build"]') && _.get(p, 'file'))
+        .map((c) => _.head(_.values(c)))
+        .filter((p) => _.get(p, 'events["pre-build"]') && _.get(p, 'file'))
         ?.length;
       this._debug('container pre build events found: %s', havePreBuild);
       let containerPreBuildStage: codePipeline.IStage;
       if (havePreBuild) {
         containerPreBuildStage = pipeline.addStage({
-          stageName: 'Mu-Containers-Pre-Build'
+          stageName: 'Mu-Containers-Pre-Build',
         });
       }
 
       const havePostBuild = !!containerSpecs
-        .map(c => _.head(_.values(c)))
-        .filter(p => _.get(p, 'events["post-build"]') && _.get(p, 'file'))
+        .map((c) => _.head(_.values(c)))
+        .filter((p) => _.get(p, 'events["post-build"]') && _.get(p, 'file'))
         ?.length;
       this._debug('container post build events found: %s', havePostBuild);
       let containerPostBuildStage: codePipeline.IStage;
       if (havePostBuild) {
         containerPostBuildStage = pipeline.addStage({
-          stageName: 'Mu-Containers-Post-Build'
+          stageName: 'Mu-Containers-Post-Build',
         });
       }
 
-      pipelineContainers.forEach(container => {
+      pipelineContainers.forEach((container) => {
         const events = _.get(
           containerSpecs
-            .map(c => _.head(_.values(c)))
-            .find(c => _.get(c, 'name', 'default') === container.node.id) || {},
+            .map((c) => _.head(_.values(c)))
+            .find((c) => _.get(c, 'name', 'default') === container.node.id) ||
+            {},
           'events',
-          {}
+          {},
         );
 
         const preBuildEventSpecs = _.get(events, 'pre-build') as string[];
@@ -254,13 +255,15 @@ export class App extends cdk.App {
             ? [preBuildEventSpecs]
             : preBuildEventSpecs) || [];
         preBuildEvents
-          .map(ev => actions.find(actionFactory => actionFactory.name === ev))
-          .forEach(actionFactory =>
+          .map((ev) =>
+            actions.find((actionFactory) => actionFactory.name === ev),
+          )
+          .forEach((actionFactory) =>
             containerPreBuildStage?.addAction(
               actionFactory?.action(
-                `${container.node.id}-pre-build`
-              ) as codePipeline.IAction
-            )
+                `${container.node.id}-pre-build`,
+              ) as codePipeline.IAction,
+            ),
           );
 
         containersStage.addAction(
@@ -268,8 +271,8 @@ export class App extends cdk.App {
             name: `build-${container.node.id}`,
             source: githubSource,
             container,
-            pipeline
-          }).action(container.node.id)
+            pipeline,
+          }).action(container.node.id),
         );
 
         const postBuildEventSpecs = _.get(events, 'post-build') as string[];
@@ -278,25 +281,27 @@ export class App extends cdk.App {
             ? [postBuildEventSpecs]
             : postBuildEventSpecs) || [];
         postBuildEvents
-          .map(ev => actions.find(actionFactory => actionFactory.name === ev))
-          .forEach(actionFactory =>
+          .map((ev) =>
+            actions.find((actionFactory) => actionFactory.name === ev),
+          )
+          .forEach((actionFactory) =>
             containerPostBuildStage?.addAction(
               actionFactory?.action(
-                `${container.node.id}-post-build`
-              ) as codePipeline.IAction
-            )
+                `${container.node.id}-post-build`,
+              ) as codePipeline.IAction,
+            ),
           );
       });
     }
 
-    Array.from(spec.environments.keys()).forEach(envName => {
+    Array.from(spec.environments.keys()).forEach((envName) => {
       const queryConstruct = (type: string): object[] =>
         _.filter(
           (spec.environments
             .get(envName)
-            ?.filter(c => _.head(_.keys(c)) === type) as object[]).map(c =>
-            _.get(c, type)
-          )
+            ?.filter((c) => _.head(_.keys(c)) === type) as object[]).map((c) =>
+            _.get(c, type),
+          ),
         );
       const environment = _.head(queryConstruct('environment'));
       this._debug('creating environment: %s / %o', envName, environment);
@@ -304,7 +309,7 @@ export class App extends cdk.App {
       this._debug('creating a stack (Mu Resources)');
       const envStack = new cdk.Stack(this, `MuResources-${envName}`, {
         description: `application resources for environment: ${envName}`,
-        stackName: `Mu-App-${envName}-${git.identifier}`
+        stackName: `Mu-App-${envName}-${git.identifier}`,
       });
 
       const networkSpecs = queryConstruct('network');
@@ -313,13 +318,13 @@ export class App extends cdk.App {
       const networkName = `network-${envName}`;
       const networkConstruct = new Network(envStack, networkName, networkProp);
 
-      queryConstruct('service').forEach(props => {
+      queryConstruct('service').forEach((props) => {
         const serviceName = _.get(props, 'name', `service-${envName}`);
         const containerNameOrUri = _.get(props, 'container', 'default');
         return new Service(envStack, serviceName, {
           ...props,
           network: networkConstruct,
-          container: queryContainer(containerNameOrUri, serviceName)
+          container: queryContainer(containerNameOrUri, serviceName),
         });
       });
 
@@ -327,7 +332,7 @@ export class App extends cdk.App {
       if (havePreDeploy) {
         const preDeployEventSpecs = _.get(
           environment,
-          'events["pre-deploy"]'
+          'events["pre-deploy"]',
         ) as string[];
         const preDeployEvents =
           (_.isString(preDeployEventSpecs)
@@ -336,11 +341,11 @@ export class App extends cdk.App {
         pipeline.addStage({
           stageName: `Mu-${envName}-Pre-Deploy`,
           actions: preDeployEvents.map(
-            ev =>
+            (ev) =>
               actions
-                .find(actionFactory => actionFactory.name === ev)
-                ?.action(`${envName}-pre-deploy`) as codePipeline.IAction
-          )
+                .find((actionFactory) => actionFactory.name === ev)
+                ?.action(`${envName}-pre-deploy`) as codePipeline.IAction,
+          ),
         });
       }
 
@@ -351,16 +356,16 @@ export class App extends cdk.App {
           new cicd.PipelineDeployStackAction({
             stack: envStack,
             input: synthesizedApp,
-            adminPermissions: true
-          })
-        ]
+            adminPermissions: true,
+          }),
+        ],
       });
 
       const havePostDeploy = !!_.get(environment, 'events["post-deploy"]');
       if (havePostDeploy) {
         const postDeployEventSpecs = _.get(
           environment,
-          'events["post-deploy"]'
+          'events["post-deploy"]',
         ) as string[];
         const postDeployEvents =
           (_.isString(postDeployEventSpecs)
@@ -369,11 +374,11 @@ export class App extends cdk.App {
         pipeline.addStage({
           stageName: `Mu-${envName}-Post-Deploy`,
           actions: postDeployEvents.map(
-            ev =>
+            (ev) =>
               actions
-                .find(actionFactory => actionFactory.name === ev)
-                ?.action(`${envName}-post-deploy`) as codePipeline.IAction
-          )
+                .find((actionFactory) => actionFactory.name === ev)
+                ?.action(`${envName}-post-deploy`) as codePipeline.IAction,
+          ),
         });
       }
     });

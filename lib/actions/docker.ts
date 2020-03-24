@@ -25,9 +25,9 @@ export class DockerBuild extends CodeBuild {
           install: { 'runtime-versions': { docker: 18 } },
           pre_build: { commands: [props.container.loginCommand] },
           build: { commands: [props.container.buildCommand] },
-          post_build: { commands: [props.container.pushCommand] }
-        }
-      }
+          post_build: { commands: [props.container.pushCommand] },
+        },
+      },
     });
   }
 }
@@ -60,13 +60,13 @@ export class DockerRun extends CodeBuild {
                 args: props.args,
                 env: {
                   ...config.toStringEnvironmentMap(),
-                  ...props.env
-                }
-              })
-            ]
-          }
-        }
-      }
+                  ...props.env,
+                },
+              }),
+            ],
+          },
+        },
+      },
     });
   }
 }

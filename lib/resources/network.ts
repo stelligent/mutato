@@ -27,7 +27,7 @@ export class Network extends cdk.Construct {
     this.vpc = new ec2.Vpc(this, 'VPC', this._props.vpc);
     this.cluster = new ecs.Cluster(this, 'Cluster', {
       ...this._props.cluster,
-      vpc: this.vpc
+      vpc: this.vpc,
     });
   }
 }

@@ -42,7 +42,7 @@ export class Container extends cdk.Construct {
       buildArgs: {},
       context: '.',
       file: '',
-      uri: ''
+      uri: '',
     });
 
     this._debug('creating a container construct with props: %o', this.props);
@@ -58,7 +58,7 @@ export class Container extends cdk.Construct {
       this._repositoryName = `mu/${git.identifier}`;
       this.repo = new ecr.Repository(this, 'repository', {
         removalPolicy: cdk.RemovalPolicy.DESTROY,
-        repositoryName: this._repositoryName
+        repositoryName: this._repositoryName,
       });
       const uri = this.repo.repositoryUri;
       this._debug('overriding container uri to: %s', uri);
@@ -102,7 +102,7 @@ export class Container extends cdk.Construct {
     const buildArgs = _.reduce(
       this.props.buildArgs,
       (accumulate, value, key) => `${accumulate} --build-arg ${key}="${value}"`,
-      ''
+      '',
     ).trim();
     const f = this.props.file;
     const t = this.getImageUri();
@@ -119,12 +119,12 @@ export class Container extends cdk.Construct {
   /** @returns shell command containing "docker run" */
   runCommand(props: ContainerRunProps): string {
     props = _.defaults(props, {
-      args: '-t --rm -v $(pwd):/project -w /project'
+      args: '-t --rm -v $(pwd):/project -w /project',
     });
     const env = _.reduce(
       props.env,
       (accumulate, value, key) => `${accumulate} -e ${key}="${value}"`,
-      ''
+      '',
     ).trim();
     return `docker run ${props.args} ${env} ${this.getImageUri()} ${props.cmd}`;
   }

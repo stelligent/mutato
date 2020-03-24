@@ -3,7 +3,7 @@ import {
   ApplicationLoadBalancedEc2Service,
   ApplicationLoadBalancedEc2ServiceProps,
   ApplicationLoadBalancedFargateService,
-  ApplicationLoadBalancedFargateServiceProps
+  ApplicationLoadBalancedFargateServiceProps,
 } from '@aws-cdk/aws-ecs-patterns';
 import * as iam from '@aws-cdk/aws-iam';
 import * as cdk from '@aws-cdk/core';
@@ -15,7 +15,7 @@ import { Network } from './network';
 
 enum ServiceProvider {
   FARGATE = 'fargate',
-  CLASSIC = 'classic'
+  CLASSIC = 'classic',
 }
 
 interface ServiceProps {
@@ -38,7 +38,7 @@ export class Service extends cdk.Construct {
 
     this._debug = debug(`mu:constructs:service:${id}`);
     this.props = _.defaults(props, {
-      provider: ServiceProvider.FARGATE
+      provider: ServiceProvider.FARGATE,
     });
 
     this._debug('creating a service construct with props: %o', this.props);
@@ -53,10 +53,10 @@ export class Service extends cdk.Construct {
         'ecr:GetAuthorizationToken',
         'ecr:BatchCheckLayerAvailability',
         'ecr:GetDownloadUrlForLayer',
-        'ecr:BatchGetImage'
+        'ecr:BatchGetImage',
       ],
       // TODO fix this and limit the scope
-      resources: ['*']
+      resources: ['*'],
     });
 
     if (this.props.provider === ServiceProvider.FARGATE) {
@@ -64,8 +64,8 @@ export class Service extends cdk.Construct {
         ...this.props.config,
         cluster: this.props.network.cluster,
         taskImageOptions: {
-          image: ecs.ContainerImage.fromRegistry(imageUri)
-        }
+          image: ecs.ContainerImage.fromRegistry(imageUri),
+        },
       });
       app.taskDefinition.addToExecutionRolePolicy(ecrPullPolicy);
     } else {
@@ -73,8 +73,8 @@ export class Service extends cdk.Construct {
         ...this.props.config,
         cluster: this.props.network.cluster,
         taskImageOptions: {
-          image: ecs.ContainerImage.fromRegistry(imageUri)
-        }
+          image: ecs.ContainerImage.fromRegistry(imageUri),
+        },
       });
       app.taskDefinition.addToExecutionRolePolicy(ecrPullPolicy);
     }

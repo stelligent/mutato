@@ -34,9 +34,9 @@ export class Approval implements ActionInterface {
         ? [
             'an approval action in a Mutato pipeline needs your attention.',
             `repository: ${git.repo}. branch: ${git.branch}.`,
-            'check your AWS console to make a decision.'
+            'check your AWS console to make a decision.',
           ].join(' ')
-        : undefined
+        : undefined,
     });
   }
 }

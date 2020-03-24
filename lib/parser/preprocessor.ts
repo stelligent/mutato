@@ -34,8 +34,8 @@ function nunjucks_cmd_global(command: string): string {
   return _.trim(
     cp.execSync(command, {
       encoding: 'utf8',
-      timeout: ms(config.opts.preprocessor.timeout)
-    })
+      timeout: ms(config.opts.preprocessor.timeout),
+    }),
   );
 }
 
@@ -60,7 +60,7 @@ export class PreProcessor {
       autoescape: false,
       noCache: true,
       throwOnUndefined: true,
-      watch: false
+      watch: false,
     });
     this.ctx = { ...context, build_time: Date.now() };
     _debug('a new preprocessor is initialized with context: %o', this.ctx);

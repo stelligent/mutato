@@ -45,10 +45,10 @@ export class Parser {
     const queryRootTag = (
       name: string,
       parsed: object[],
-      defaults: any = []
+      defaults: any = [],
     ): object[] => {
       _debug('looking for a root tag: %s', name);
-      const tag = parsed.filter(tags => _.isObject(_.get(tags, name)));
+      const tag = parsed.filter((tags) => _.isObject(_.get(tags, name)));
       assert.ok(tag.length <= 1, 'too many root tags');
       return _.get(_.head(tag) || {}, name, defaults) as object[];
     };
@@ -82,7 +82,7 @@ export class Parser {
     return {
       actions: actionSpecs,
       containers: containerSpecs,
-      environments
+      environments,
     };
   }
 }

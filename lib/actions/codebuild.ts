@@ -47,26 +47,26 @@ export class CodeBuild implements ActionInterface {
             : this._props.container
             ? this._props.container.repo
               ? codeBuild.LinuxBuildImage.fromEcrRepository(
-                  this._props.container.repo
+                  this._props.container.repo,
                 )
               : codeBuild.LinuxBuildImage.fromDockerRegistry(
-                  this._props.container?.getImageUri()
+                  this._props.container?.getImageUri(),
                 )
             : undefined,
           environmentVariables: config.toBuildEnvironmentMap(),
-          privileged: this._props.privileged
+          privileged: this._props.privileged,
         },
         buildSpec: _.isObject(this._props.spec)
           ? codeBuild.BuildSpec.fromObject(this._props.spec)
-          : codeBuild.BuildSpec.fromSourceFilename(this._props.spec)
-      }
+          : codeBuild.BuildSpec.fromSourceFilename(this._props.spec),
+      },
     );
 
     this._props.container?.repo?.grantPullPush(project);
     const action = new codePipelineActions.CodeBuildAction({
       actionName: `${this.name}-${requester}`,
       input: this._props.source,
-      project
+      project,
     });
 
     return action;
