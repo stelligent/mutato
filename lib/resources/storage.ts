@@ -16,14 +16,14 @@ interface StorageProps {
 /** Storage provider for service constructs */
 export class Storage extends cdk.Construct {
   public readonly props: StorageProps;
-  public readonly bucket?: s3.Bucket;
+  public readonly resource: s3.Bucket;
   private readonly _debug: debug.Debugger;
 
   /**
    * @hideconstructor
-   * @param scope
-   * @param id
-   * @param props
+   * @param scope CDK construct scope
+   * @param id CDK construct ID
+   * @param props storage configuration
    */
   constructor(scope: cdk.Construct, id: string, props: StorageProps) {
     super(scope, id);
@@ -35,8 +35,8 @@ export class Storage extends cdk.Construct {
 
     this._debug('creating storage with props: %o', this.props);
     switch (this.props.provider) {
-      case 's3':
-        this.bucket = new s3.Bucket(this, 'bucket', {
+      case StorageProvider.S3:
+        this.resource = new s3.Bucket(this, 'bucket', {
           removalPolicy: cdk.RemovalPolicy.DESTROY,
           encryption: s3.BucketEncryption.S3_MANAGED,
           ...this.props.config,
