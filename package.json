@@ -99,9 +99,11 @@
     "all": false
   },
   "prettier": {
-    "printWidth": 80,
+    "semi": true,
     "tabWidth": 2,
-    "singleQuote": true
+    "printWidth": 80,
+    "singleQuote": true,
+    "trailingComma": "all"
   },
   "eslintConfig": {
     "root": true,
@@ -109,40 +111,15 @@
     "parserOptions": {
       "project": "tsconfig.json"
     },
-    "plugins": [
-      "@typescript-eslint",
-      "prettier",
-      "jsdoc"
-    ],
     "extends": [
-      "eslint:recommended",
-      "plugin:@typescript-eslint/eslint-recommended",
+      "plugin:jsdoc/recommended",
       "plugin:@typescript-eslint/recommended",
-      "prettier/@typescript-eslint"
+      "prettier/@typescript-eslint",
+      "plugin:prettier/recommended"
     ],
     "rules": {
-      "jsdoc/require-jsdoc": [
-        "error",
-        {
-          "publicOnly": false,
-          "require": {
-            "ClassDeclaration": true,
-            "MethodDefinition": true
-          }
-        }
-      ],
-      "jsdoc/check-examples": [
-        "error",
-        {
-          "baseConfig": {
-            "parser": "@typescript-eslint/parser"
-          }
-        }
-      ],
-      "prettier/prettier": "error",
-      "@typescript-eslint/camelcase": "off",
-      "@typescript-eslint/no-empty-interface": "off",
-      "@typescript-eslint/interface-name-prefix": "off"
+      "jsdoc/require-param-type": 0,
+      "jsdoc/require-returns-type": 0
     },
     "settings": {
       "jsdoc": {
