@@ -68,6 +68,7 @@
     "@aws-cdk/aws-ecs": "^1.30.0",
     "@aws-cdk/aws-ecs-patterns": "^1.30.0",
     "@aws-cdk/aws-iam": "^1.30.0",
+    "@aws-cdk/aws-s3": "^1.30.0",
     "@aws-cdk/core": "^1.30.0",
     "aws-cdk": "^1.30.0",
     "debug": "^4.1.1",
