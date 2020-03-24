@@ -50,6 +50,7 @@
     "eslint-config-prettier": "^6.10.1",
     "eslint-plugin-jsdoc": "^22.1.0",
     "eslint-plugin-prettier": "^3.1.2",
+    "husky": "^4.2.3",
     "mocha": "^7.1.1",
     "npm-run-all": "^4.1.5",
     "nyc": "^15.0.0",
@@ -128,5 +129,16 @@
         "mode": "typescript"
       }
     }
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "tsc --noEmit && lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,ts}": [
+      "eslint --fix",
+      "git add"
+    ]
   }
 }
