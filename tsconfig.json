@@ -23,13 +23,5 @@
     "outDir": "out",
     "allowJs": true
   },
-  "exclude": ["cdk.out", "out"],
-  "typedocOptions": {
-    "exclude": "test/**",
-    "excludePrivate": true,
-    "out": "docs",
-    "includeVersion": true,
-    "readme": "./docs/INDEX.md",
-    "gitRevision": "https://github.com/stelligent/mutato/tree/master"
-  }
+  "exclude": ["cdk.out", "out", "dist", "docs"]
 }
