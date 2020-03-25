@@ -14,16 +14,16 @@
     "build": "npm-run-all lint:write compile:emit",
     "clean": "git clean -xdff -e node_modules",
     "lint": "npm-run-all compile:check lint:check",
-    "test": "DEBUG='mu*' npm-run-all build test:mocha",
+    "test": "npm-run-all build test:mocha",
     "compile:emit": "tsc",
     "compile:check": "tsc --noEmit",
     "test:mocha": "nyc mocha test/**/*.test.ts 2>npm-test.log",
     "lint:check": "eslint --quiet {lib,bin,test}/**/*.ts",
     "lint:write": "eslint --quiet --fix {lib,bin,test}/**/*.ts",
     "docs:serve": "docsify serve docs",
-    "cdk:destroy": "DEBUG='mu*' npx cdk destroy --verbose Mu-Pipeline*",
-    "cdk:deploy": "DEBUG='mu*' npx cdk deploy --verbose Mu-Pipeline*",
-    "cdk:synth": "DEBUG='mu*' npx cdk synth --verbose -o dist"
+    "destroy": "npx cdk destroy --verbose Mu-Pipeline*",
+    "deploy": "npx cdk deploy --verbose Mu-Pipeline*",
+    "synth": "npx cdk synth --verbose -o dist"
   },
   "devDependencies": {
     "@aws-cdk/assert": "^1.31.0",
