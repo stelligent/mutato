@@ -1,12 +1,15 @@
 import * as ecs from '@aws-cdk/aws-ecs';
+import * as sqs from '@aws-cdk/aws-sqs';
 import * as ecsPatterns from '@aws-cdk/aws-ecs-patterns';
 import * as iam from '@aws-cdk/aws-iam';
 import * as cdk from '@aws-cdk/core';
+import * as appAutoScaling from '@aws-cdk/aws-applicationautoscaling';
 import assert from 'assert';
 import debug from 'debug';
 import _ from 'lodash';
 import { Container } from './container';
 import { Network } from './network';
+import { Storage } from './storage';
 
 enum ServiceProvider {
   Fargate = 'fargate',
@@ -20,6 +23,7 @@ enum ServiceProvider {
 interface ServiceProps {
   provider?: ServiceProvider;
   container: Container;
+  storage?: Storage;
   network: Network;
   rate?: string;
   config?:
@@ -55,6 +59,7 @@ export class Service extends cdk.Construct {
     this._debug = debug(`mu:constructs:service:${id}`);
     this.props = _.defaults(props, {
       provider: ServiceProvider.Fargate,
+      rate: 'rate(1 day)',
     });
 
     this._debug('creating a service construct with props: %o', this.props);
@@ -81,12 +86,12 @@ export class Service extends cdk.Construct {
           this,
           `Fargate`,
           {
-            ...(this.props
-              .config as ecsPatterns.ApplicationLoadBalancedFargateServiceProps),
             cluster: this.props.network.cluster,
             taskImageOptions: {
               image: ecs.ContainerImage.fromRegistry(imageUri),
             },
+            ...(this.props
+              .config as ecsPatterns.ApplicationLoadBalancedFargateServiceProps),
           },
         );
         break;
@@ -95,22 +100,74 @@ export class Service extends cdk.Construct {
           this,
           `Classic`,
           {
-            ...(this.props
-              .config as ecsPatterns.ApplicationLoadBalancedEc2ServiceProps),
             cluster: this.props.network.cluster,
             taskImageOptions: {
               image: ecs.ContainerImage.fromRegistry(imageUri),
             },
+            ...(this.props
+              .config as ecsPatterns.ApplicationLoadBalancedEc2ServiceProps),
           },
         );
         break;
       case ServiceProvider.FargateTask:
+        assert.ok(this.props.rate, 'CloudWatch rate expression must be set');
+        this.resource = new ecsPatterns.ScheduledFargateTask(
+          this,
+          `FargateTask`,
+          {
+            cluster: this.props.network.cluster,
+            scheduledFargateTaskImageOptions: {
+              image: ecs.ContainerImage.fromRegistry(imageUri),
+            },
+            schedule: appAutoScaling.Schedule.expression(
+              this.props.rate as string,
+            ),
+            ...(this.props.config as ecsPatterns.ScheduledFargateTaskProps),
+          },
+        );
         break;
       case ServiceProvider.ClassicTask:
+        assert.ok(this.props.rate, 'CloudWatch rate expression must be set');
+        this.resource = new ecsPatterns.ScheduledEc2Task(this, `ClassicTask`, {
+          cluster: this.props.network.cluster,
+          scheduledEc2TaskImageOptions: {
+            image: ecs.ContainerImage.fromRegistry(imageUri),
+          },
+          schedule: appAutoScaling.Schedule.expression(
+            this.props.rate as string,
+          ),
+          ...(this.props.config as ecsPatterns.ScheduledEc2TaskProps),
+        });
         break;
-      case ServiceProvider.ClassicTask:
+      case ServiceProvider.FargateQueue:
+        assert.ok(this.props.storage, 'storage must be set');
+        assert.ok(this.props.storage?.resource, 'storage resource must be set');
+        this.resource = new ecsPatterns.QueueProcessingFargateService(
+          this,
+          'FargateQueue',
+          {
+            image: ecs.ContainerImage.fromRegistry(imageUri),
+            queue: this.props.storage?.resource as sqs.Queue,
+            cluster: this.props.network.cluster,
+            ...(this.props
+              .config as ecsPatterns.QueueProcessingFargateServiceProps),
+          },
+        );
         break;
       case ServiceProvider.ClassicQueue:
+        assert.ok(this.props.storage, 'storage must be set');
+        assert.ok(this.props.storage?.resource, 'storage resource must be set');
+        this.resource = new ecsPatterns.QueueProcessingEc2Service(
+          this,
+          'ClassicQueue',
+          {
+            image: ecs.ContainerImage.fromRegistry(imageUri),
+            queue: this.props.storage?.resource as sqs.Queue,
+            cluster: this.props.network.cluster,
+            ...(this.props
+              .config as ecsPatterns.QueueProcessingEc2ServiceProps),
+          },
+        );
         break;
       default:
         assert.fail('storage type not supported');
