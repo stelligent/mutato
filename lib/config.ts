@@ -25,8 +25,9 @@ function rcTyped<T>(name: string, defaults: T): T {
 }
 
 // args passed to cp.execSync down when we extract defaults from environment
-const gitRemoteCmd = 'git config --get remote.origin.url || true';
-const gitBranchCmd = 'git rev-parse --abbrev-ref HEAD || true';
+const gitC = _.get(process.env, 'mu_opts__git__local', process.cwd());
+const gitRemoteCmd = `git -C "${gitC}" config --get remote.origin.url || true`;
+const gitBranchCmd = `git -C "${gitC}" rev-parse --abbrev-ref HEAD || true`;
 
 type StringEnvironmentVariableMap = { [key: string]: string };
 type BuildEnvironmentVariableMap = { [key: string]: BuildEnvironmentVariable };
@@ -35,6 +36,7 @@ log('extracting configuration');
 export const config = rcTyped('mu', {
   opts: {
     git: {
+      local: gitC,
       remote: cp
         .execSync(gitRemoteCmd, { encoding: 'utf8', timeout: 1000 })
         .trim(),

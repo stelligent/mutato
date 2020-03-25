@@ -23,7 +23,7 @@ import { Service } from './resources/service';
 export class App extends cdk.App {
   private readonly _parser = new Parser();
   private readonly _debug = debug('mu:App');
-  private static MU_YML = path.resolve(process.cwd(), 'mu.yml');
+  private static MU_YML = path.resolve(config.opts.git.local, 'mu.yml');
 
   /**
    * initializes this Mu App from a valid Mu YAML file
