@@ -14,6 +14,8 @@ import { MuSpec, Parser } from './parser';
 import { Container } from './resources/container';
 import { Network } from './resources/network';
 import { Service } from './resources/service';
+import { Storage } from './resources/storage';
+import { Database } from './resources/database';
 
 /**
  * This class holds together a Mu Pipeline (a Stack) and Mu Resources (a Stack
@@ -317,6 +319,19 @@ export class App extends cdk.App {
       const networkProp = _.head(networkSpecs);
       const networkName = `network-${envName}`;
       const networkConstruct = new Network(envStack, networkName, networkProp);
+
+      queryConstruct('storage').forEach((props) => {
+        const storageName = _.get(props, 'name', `storage-${envName}`);
+        return new Storage(envStack, storageName, props);
+      });
+
+      queryConstruct('database').forEach((props) => {
+        const databaseName = _.get(props, 'name', `database-${envName}`);
+        return new Database(envStack, databaseName, {
+          ...props,
+          network: networkConstruct,
+        });
+      });
 
       queryConstruct('service').forEach((props) => {
         const serviceName = _.get(props, 'name', `service-${envName}`);
