@@ -23,7 +23,7 @@
     "docs:serve": "docsify serve docs",
     "destroy": "npx cdk destroy --verbose Mu-Pipeline*",
     "deploy": "npx cdk deploy --verbose Mu-Pipeline*",
-    "synth": "npx cdk synth --verbose -o dist"
+    "synth": "npx cdk synth --verbose -o $(ts-node -e \"console.log(require('./lib/config.ts').config.opts.git.local)\")/dist"
   },
   "devDependencies": {
     "@aws-cdk/assert": "^1.31.0",
