@@ -320,7 +320,7 @@ export class App extends cdk.App {
       const networkName = `network-${envName}`;
       const networkConstruct = new Network(envStack, networkName, networkProp);
 
-      queryConstruct('storage').forEach((props) => {
+      const storages = queryConstruct('storage').map((props) => {
         const storageName = _.get(props, 'name', `storage-${envName}`);
         return new Storage(envStack, storageName, props);
       });
@@ -336,11 +336,12 @@ export class App extends cdk.App {
       queryConstruct('service').forEach((props) => {
         const serviceName = _.get(props, 'name', `service-${envName}`);
         const containerNameOrUri = _.get(props, 'container', 'default');
-        return new Service(envStack, serviceName, {
+        const service = new Service(envStack, serviceName, {
           ...props,
           network: networkConstruct,
           container: queryContainer(containerNameOrUri, serviceName),
         });
+        storages.forEach((storage) => storage.grantAccess(service));
       });
 
       const havePreDeploy = !!_.get(environment, 'events["pre-deploy"]');

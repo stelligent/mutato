@@ -4,6 +4,7 @@ import * as cdk from '@aws-cdk/core';
 import assert from 'assert';
 import debug from 'debug';
 import _ from 'lodash';
+import { Service } from './service';
 
 enum StorageProvider {
   S3 = 's3',
@@ -49,6 +50,39 @@ export class Storage extends cdk.Construct {
           encryption: sqs.QueueEncryption.KMS_MANAGED,
           ...(this.props.config as sqs.QueueProps),
         });
+        break;
+      default:
+        assert.fail('storage type not supported');
+    }
+  }
+
+  grantAccess(service: Service): void {
+    assert.ok(service.resource, 'service resource does not exist');
+    // this is a hack but it works, adds env vars to taskDefinition after synth
+    const _addEnv = (key: string, val: string): void => {
+      _.set(
+        service.resource.taskDefinition,
+        `defaultContainer.props.environment["${key}_${this.resource.node.id}"]`,
+        val,
+      );
+    };
+    switch (typeof this.resource) {
+      case typeof s3.Bucket:
+        const b = this.resource as s3.Bucket;
+        b.grantReadWrite(service.resource.taskDefinition.taskRole);
+        b.grantDelete(service.resource.taskDefinition.taskRole);
+        b.grantPut(service.resource.taskDefinition.taskRole);
+        _addEnv(`STORAGE_BUCKET_ARN`, b.bucketArn);
+        _addEnv(`STORAGE_BUCKET_NAME`, b.bucketName);
+        _addEnv(`STORAGE_BUCKET_DOMAIN`, b.bucketDomainName);
+      case typeof sqs.Queue:
+        const q = this.resource as sqs.Queue;
+        q.grantConsumeMessages(service.resource.taskDefinition.taskRole);
+        q.grantSendMessages(service.resource.taskDefinition.taskRole);
+        q.grantPurge(service.resource.taskDefinition.taskRole);
+        _addEnv(`STORAGE_QUEUE_ARN`, q.queueArn);
+        _addEnv(`STORAGE_QUEUE_URL`, q.queueUrl);
+        _addEnv(`STORAGE_QUEUE_NAME`, q.queueName);
         break;
       default:
         assert.fail('storage type not supported');
