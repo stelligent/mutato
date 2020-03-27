@@ -325,7 +325,7 @@ export class App extends cdk.App {
         return new Storage(envStack, storageName, props);
       });
 
-      queryConstruct('database').forEach((props) => {
+      const databases = queryConstruct('database').map((props) => {
         const databaseName = _.get(props, 'name', `database-${envName}`);
         return new Database(envStack, databaseName, {
           ...props,
@@ -342,6 +342,7 @@ export class App extends cdk.App {
           container: queryContainer(containerNameOrUri, serviceName),
         });
         storages.forEach((storage) => storage.grantAccess(service));
+        databases.forEach((database) => database.grantAccess(service));
       });
 
       const havePreDeploy = !!_.get(environment, 'events["pre-deploy"]');
