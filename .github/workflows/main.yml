@@ -1,6 +1,9 @@
 name: Docs
 
-on: [push]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   build:
@@ -12,6 +15,14 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 12.x
+      - name: Cache Modules
+        uses: actions/cache@v1
+        with:
+          path: ~/.npm # npm cache files are stored in `~/.npm` on Linux/macOS
+          key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.OS }}-node-
+            ${{ runner.OS }}-
       - run: npm install
       - run: npm run docs:build
       - name: Deploy
