@@ -23,9 +23,11 @@
     "lint:write": "eslint --quiet --fix {lib,bin,test}/**/*.ts",
     "docs:serve": "docsify serve doc/",
     "docs:build": "jsdoc2md --files ./lib/**/*.ts --no-cache --configure ./jsdoc2md.json > ./doc/api.md",
+    "bootstrap": "npx cdk bootstrap",
     "destroy": "npx cdk destroy --verbose Mu-Pipeline*",
     "deploy": "npx cdk deploy --verbose Mu-Pipeline*",
-    "synth": "npx cdk synth --verbose -o $(ts-node -e \"console.log(require('./lib/config.ts').config.opts.git.local)\")/dist"
+    "synth": "npx cdk synth --verbose -o $(ts-node -e \"console.log(require('./lib/config.ts').config.opts.git.local)\")/dist",
+    "cdk": "npx cdk"
   },
   "devDependencies": {
     "@aws-cdk/assert": "^1.31.0",
