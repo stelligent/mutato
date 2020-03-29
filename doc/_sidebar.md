@@ -1,0 +1,7 @@
+- [Mutato](#mutato)
+    - [Table of Contents](#table-of-contents)
+    - [Getting started](#getting-started)
+    - [Contributing](#contributing)
+    - [Documentation](#documentation)
+    - [Q & A](#q-amp-a)
+- [Constructs](api/index.md)
