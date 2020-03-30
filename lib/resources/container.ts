@@ -85,10 +85,13 @@ export class Container extends cdk.Construct {
    * account.
    */
   getImageUri(caller?: cdk.Construct): string {
-    if (caller) {
+    if (caller && this.repo) {
+      // little hack so we can use this container cross-stacks without circular
+      // errors thrown by CloudFormation. the build order is guaranteed so this
+      // is safe here.
       const stack = cdk.Stack.of(caller);
       const uri = `${stack.account}.dkr.ecr.${stack.region}.${stack.urlSuffix}/${this._repositoryName}`;
-      return this.repo ? uri : (this.props.uri as string);
+      return uri;
     } else return this.props.uri as string;
   }
 
@@ -124,7 +127,7 @@ export class Container extends cdk.Construct {
 
   /**
    * @returns shell command containing "docker run"
-   * @param props
+   * @param props docker run props
    */
   runCommand(props: ContainerRunProps): string {
     props = _.defaults(props, {

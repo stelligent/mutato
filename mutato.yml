@@ -1,0 +1,6 @@
+---
+containers:
+  - docker:
+      name: mutato
+      file: Dockerfile
+      uri: stelligent/mutato
