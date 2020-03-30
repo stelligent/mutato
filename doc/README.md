@@ -5,7 +5,7 @@
 > to Mu. While there are many similarities between the two projects, currently
 > we are not planning to provide any compatibilities between the two.
 
-[Stelligent Mutato](https://github.com/stelligent/mu) is an open-source
+[Stelligent Mutato](https://github.com/stelligent/mutato) is an open-source
 framework for building containerized micro-services on the AWS ecosystem (e.g
 ECS or Fargate). Mutato is designed to leverage [AWS Cloud Development Kit
 (CDK)](https://docs.aws.amazon.com/cdk/latest/guide/home.html) constructs which

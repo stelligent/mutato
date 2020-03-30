@@ -13,12 +13,12 @@ describe('Container Construct Tests', () => {
       const stack = new cdk.Stack(app, 'MyTestStack');
       const construct = new Container(stack, 'MyTestContainer', {
         file: 'Dockerfile',
-        uri: 'stelligent/mu',
+        uri: 'stelligent/mutato',
       });
       cdkAssert
         .expect(stack)
         .notTo(cdkAssert.haveResource('AWS::ECR::Repository'));
-      chai.assert.equal(construct.props.uri, 'stelligent/mu');
+      chai.assert.equal(construct.props.uri, 'stelligent/mutato');
     });
 
     it('should ba able to generate a build command with a tag', () => {
@@ -26,12 +26,12 @@ describe('Container Construct Tests', () => {
       const stack = new cdk.Stack(app, 'MyTestStack');
       const construct = new Container(stack, 'MyTestContainer', {
         file: 'Dockerfile',
-        uri: 'stelligent/mu',
+        uri: 'stelligent/mutato',
       });
-      chai.assert.equal(construct.props.uri, 'stelligent/mu');
+      chai.assert.equal(construct.props.uri, 'stelligent/mutato');
       chai
         .expect(construct.buildCommand)
-        .to.be.equal(`docker build  -t stelligent/mu -f Dockerfile .`);
+        .to.be.equal(`docker build  -t stelligent/mutato -f Dockerfile .`);
       const construct2 = new Container(stack, 'MyTestContainer2', {
         buildArgs: {
           key1: 'val1',
@@ -39,12 +39,12 @@ describe('Container Construct Tests', () => {
         },
         file: 'Dockerfile2',
         context: 'Context2',
-        uri: 'stelligent/mu',
+        uri: 'stelligent/mutato',
       });
       chai
         .expect(construct2.buildCommand)
         .to.be.equal(
-          `docker build --build-arg key1="val1" --build-arg key2="val2" -t stelligent/mu -f Dockerfile2 Context2`,
+          `docker build --build-arg key1="val1" --build-arg key2="val2" -t stelligent/mutato -f Dockerfile2 Context2`,
         );
     });
 
@@ -53,9 +53,9 @@ describe('Container Construct Tests', () => {
       const stack = new cdk.Stack(app, 'MyTestStack');
       const construct = new Container(stack, 'MyTestContainer', {
         file: 'Dockerfile',
-        uri: 'stelligent/mu',
+        uri: 'stelligent/mutato',
       });
-      chai.assert.equal(construct.props.uri, 'stelligent/mu');
+      chai.assert.equal(construct.props.uri, 'stelligent/mutato');
       const uri = construct.getImageUri();
       chai.expect(construct.pushCommand).to.be.equal(`docker push ${uri}`);
     });

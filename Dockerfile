@@ -3,7 +3,7 @@ FROM node:lts
 ADD . /mu
 WORKDIR /mu
 
-ENV DEBUG=mu*
+ENV DEBUG=mutato*
 ENV DEBUG_COLORS=0
 ENV USER=root
 ENV TEMP=/tmp
@@ -19,5 +19,5 @@ RUN mkdir -p ${HOME} && chmod a+rwx ${TEMP} ${HOME} \
   && npm install \
   && rm -rf /var/lib/apt/lists/*
 
-ENV mu_opts__git__local=/project
+ENV mutato_opts__git__local=/project
 ENTRYPOINT ["/usr/bin/dumb-init", "--", "/usr/local/bin/npm", "run"]

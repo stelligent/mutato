@@ -11,7 +11,7 @@ import rc from 'rc';
 import traverse from 'traverse';
 import parse = require('parse-strings-in-object');
 
-const log = debug('mu:config');
+const log = debug('mutato:config');
 
 /**
  * @param name "rc" namespace
@@ -25,7 +25,7 @@ function rcTyped<T>(name: string, defaults: T): T {
 }
 
 // args passed to cp.execSync down when we extract defaults from environment
-const gitC = _.get(process.env, 'mu_opts__git__local', process.cwd());
+const gitC = _.get(process.env, 'mutato_opts__git__local', process.cwd());
 const gitRemoteCmd = `git -C "${gitC}" config --get remote.origin.url || true`;
 const gitBranchCmd = `git -C "${gitC}" rev-parse --abbrev-ref HEAD || true`;
 
@@ -33,7 +33,7 @@ type StringEnvironmentVariableMap = { [key: string]: string };
 type BuildEnvironmentVariableMap = { [key: string]: BuildEnvironmentVariable };
 
 log('extracting configuration');
-export const config = rcTyped('mu', {
+export const config = rcTyped('mutato', {
   opts: {
     git: {
       local: gitC,
@@ -74,7 +74,7 @@ export const config = rcTyped('mu', {
   toStringEnvironmentMap() {
     return traverse(this).reduce(function (acc, x) {
       if (this.isLeaf && this.key !== '_' && !_.isFunction(x))
-        acc[`mu_${this.path.join('__')}`] = `${x}`;
+        acc[`mutato_${this.path.join('__')}`] = `${x}`;
       return acc;
     }, {}) as StringEnvironmentVariableMap;
   },
@@ -92,4 +92,4 @@ export const config = rcTyped('mu', {
   },
 });
 
-log('Mu configuration: %o', config.toStringEnvironmentMap());
+log('Mutato configuration: %o', config.toStringEnvironmentMap());

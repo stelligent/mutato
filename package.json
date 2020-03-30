@@ -1,6 +1,6 @@
 {
-  "name": "mu",
-  "version": "0.1.0",
+  "name": "@stelligent/mutato",
+  "version": "2.0.0",
   "description": "simplify the declaration and administration of the AWS resources necessary to support microservices.",
   "license": "MIT",
   "repository": {
@@ -8,7 +8,7 @@
     "url": "git+https://github.com/stelligent/mutato.git"
   },
   "bin": {
-    "mu": "bin/mu.js"
+    "mutato": "bin/mutato.js"
   },
   "scripts": {
     "postinstall": "npm-run-all docs:build",
@@ -24,8 +24,8 @@
     "docs:serve": "docsify serve doc/",
     "docs:build": "jsdoc2md --files ./lib/**/*.ts --no-cache --configure ./jsdoc2md.json > ./doc/api.md",
     "bootstrap": "npx cdk bootstrap",
-    "destroy": "npx cdk destroy --verbose Mu-Pipeline*",
-    "deploy": "npx cdk deploy --verbose Mu-Pipeline*",
+    "destroy": "npx cdk destroy --verbose Mutato-Pipeline*",
+    "deploy": "npx cdk deploy --verbose Mutato-Pipeline*",
     "synth": "npx cdk synth --verbose -o $(ts-node -e \"console.log(require('./lib/config.ts').config.opts.git.local)\")/dist",
     "cdk": "npx cdk"
   },

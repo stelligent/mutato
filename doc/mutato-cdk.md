@@ -23,7 +23,7 @@ async function createCustomMutatoApp() {
   await app.synthesizeFromFile('/path/to/mutato.yml');
   
   // here you have a functioning CDK app, you can use it to add more resources
-  const customStack = new cdk.Stack(app, 'MuCustomStack', {
+  const customStack = new cdk.Stack(app, 'MyCustomStack', {
     description: 'example of a custom stack attached to a Mutato app',
   });
 
