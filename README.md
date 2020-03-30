@@ -1,57 +1,91 @@
 # Mutato
 
-Stelligent Mutato is an open-source framework for building containerized micro-services on the AWS ecosystem (e.g ECS, EKS, or Fargate). Mutato is an improvement on [Mu](https://github.com/stelligent/mu), designed to leverage [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/home.html) constructs which abstract the complexity of writing a safe and secure CloudFormation file to deploy and automate micro-service deployments.
+> [!NOTE] If you are coming from the original [Stelligent
+> Mu](https://github.com/stelligent/mu), keep in mind that Mutato is a successor
+> to Mu. While there are many similarities between the two projects, currently
+> we are not planning to provide any compatibilities between the two.
 
-_The truth is out there._
+[Stelligent Mutato](https://github.com/stelligent/mu) is an open-source
+framework for building containerized micro-services on the AWS ecosystem (e.g
+ECS or Fargate). Mutato is designed to leverage [AWS Cloud Development Kit
+(CDK)](https://docs.aws.amazon.com/cdk/latest/guide/home.html) constructs which
+abstract the complexity of writing a safe and secure CloudFormation file to
+deploy and automate micro-service deployments.
 
-## Table of Contents
+## Getting Started
 
-- [Getting Started](#getting-started)
-- [Contributing](#contributing)
-- [Documentation](#documentation)
-- [Q & A](#q--a)
+Create a simple _mutato.yml_ file in your Github repository:
 
-## Getting started
+```YAML
+---
+environments:
+  - acceptance
+  - production
+---
+resources:
+  - service:
+      provider: fargate
+      container: nginx:latest
+  - network:
+      vpc:
+        maxAZs: {{ 1 if environment == "acceptance" else 3 }}
+```
 
-Currently, there are no prequisites to getting started.
+Obtain a [GitHub OAuth
+token](https://help.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token).
+We assume you have this available in your `$PATH` under `$GITHUB_TOKEN`. Execute
+the following to deploy your microservice:
 
-Pull the project and run `npm install`.
+```bash
+$ echo $GITHUB_TOKEN > mutato.env
+$ aws-vault exec <profile name> -- env | grep AWS_ >> mutato.env
+$ docker run --env-file mutato.env stelligent/mutato bootstrap
+$ docker run --env-file mutato.env -v /path/to/your/github/repo:/project stelligent/mutato deploy
+```
 
-Verify the installation was successfull with `npm build`
+This gives you a load balanced NGINX server in two separate environments and the
+_acceptance_ environment has its VPC AZ capacity set to 1 to reduce costs.
 
+## Where To Head Next
 
-## Contributing
+- To learn more about what you can write in _mutato.yml_, head over to its
+  [reference schema](mutato-yaml) page.
+- To learn more about what you can do with the Mutato Docker container, head
+  over [to its page](mutato-docker).
+- To learn more about extensibility of Mutato, read [its extensibility
+  documentation](mutato-cdk).
+- If you are looking for the auto generated low level CDK api documentation, [go
+  to API](api)
 
-Contributions to the project are always welcome! Review the [Contribution Guide](CONTRIBUTING.md) so we're all on the same page.
+## AWS Environment
 
+We highly recommend you use [aws-vault](https://github.com/99designs/aws-vault)
+to manage your AWS environment. If you choose not to, you should manually create
+your `mutato.env` file with at least the following environment variables:
 
-## Documentation
+- _AWS_DEFAULT_REGION_
+- _AWS_ACCESS_KEY_ID_
+- _AWS_SECRET_ACCESS_KEY_
 
-Designs, diagrams, and other documentation can be found in [`docs`](docs/). Code documentation is auto-generated, provided by [typedoc](https://typedoc.org/) and enforced by [eslint](https://github.com/typescript-eslint/typescript-eslint) with the [eslint-plugin-jsdoc](https://github.com/gajus/eslint-plugin-jsdoc) plugin. See the `package.json` `docs` script for exact usage. Note that Eslint is used in favor of [Tslint](https://github.com/palantir/tslint) due to the deprecation of that project.
+Consult [Docker run](https://docs.docker.com/engine/reference/commandline/run)'s
+documentation on the format of the `mutato.env` file. Consult [AWS
+CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html)'s
+documentation for the environment variables you may need to set manually.
 
-Documentation linting standards are provided with the following plugins recommended guidelines:
+## Supported Platforms
 
-| Project | Guideline(s) | Description |
-| --- | --- | --- |
-| [typescript-eslint](https://github.com/typescript-eslint/typescript-eslint) |  `plugin:@typescript-eslint/recommended` and `plugin:@typescript-eslint/recommended-requiring-type-checking` | for typescript support |
-| [eslint-plugin-jsdoc](https://github.com/gajus/eslint-plugin-jsdoc#configuration) | `plugin:jsdoc/recommended` | for documentation linting |
-| [eslint-plugin-prettier](https://github.com/prettier/eslint-plugin-prettier#recommended-configuration) | `plugin:prettier/recommended` | for code linting |
+Mutato has been mostly developed and tested on Linux 64bit (Ubuntu 18.04 LTS).
+The core codebase is in typescript and uses CDK, therefore in theory it should
+run anywhere that is capable of running a Docker container or node and npm, but
+the official support is mostly provided for the Linux 64bit platform.
 
+## Stability
 
-## Q & A
+Currently Mutato is under active development. Expect an alpha quality software
+and things rapidly changing until we announce our stable v1.0.
 
-**Q)** When I run `npm install` I get a `gyp ERR` error `(Error: Command failed: {home}/.pyenv/shims/python -c import sys; print "%s.%s.%s" % sys.version_info[:3];)`. What gives?
-**A)** Your node gyp is using python 3+ to execute a non python 3+ compatible script. You can either:
-* Switch the python versios to one supported by that gyp version (i.e. 2.7.10) using pyenv or similar _(preferred)_
-* Update the gyp version to one compatible with [python 3](https://github.com/nodejs/node-gyp/tree/v6.1.0)
-	
-Then, rerun `npm install`. 
+Do not use this in production yet!
 
-**Q)** Mutato generates typescript definitions from a JSON schema. Is there a reason we aren't generating the JSON schema from our typescript definitions instead?
-**A)** Generating `*.d.ts` files from a JSON schema offers a few benefits compared to the reverse approach. Namely:
-* Single source of authority. 1 file is used for consumption vs many.
-* Portability. Validating against [JSON](https://json-schema.org/implementations.html) is less involved than validating against Typescript definitions.
-* Versatility. A JSON schema offers a wider range of [capabilities](https://json-schema.org/draft/2019-09/json-schema-validation.html) up front.
+<small>...or do. test in production amirite?</small>
 
-The drawback of validating this direction occurs when an implementation is changed without updating the schema (or vice versa) happens. Such a case would cause the CI build to fail.
-
+![At that part, I'm a pro](pro.gif)
