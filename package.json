@@ -11,8 +11,8 @@
     "mutato": "bin/mutato.js"
   },
   "scripts": {
-    "postinstall": "npm-run-all docs:build",
-    "build": "npm-run-all lint:write compile:emit docs:build",
+    "postinstall": "npm-run-all docs:build docs:index",
+    "build": "npm-run-all lint:write compile:emit docs:build docs:index",
     "clean": "git clean -xdff -e node_modules",
     "lint": "npm-run-all compile:check lint:check",
     "test": "npm-run-all build test:mocha",
@@ -23,6 +23,7 @@
     "lint:write": "eslint --quiet --fix {lib,bin,test}/**/*.ts",
     "docs:serve": "docsify serve doc/",
     "docs:build": "jsdoc2md --files ./lib/**/*.ts --no-cache --configure ./jsdoc2md.json > ./doc/api.md",
+    "docs:index": "cp README.md doc/README.md",
     "bootstrap": "npx cdk bootstrap",
     "destroy": "npx cdk destroy --verbose Mutato-Pipeline*",
     "deploy": "npx cdk deploy --verbose Mutato-Pipeline*",
