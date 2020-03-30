@@ -5,30 +5,31 @@ import _ from 'lodash';
 import { Loader } from './loader';
 import { PreProcessor } from './preprocessor';
 
-const _debug = debug('mu:parser:Parser');
+const _debug = debug('mutato:parser:Parser');
 
 type ActionSpec = object;
 type ResourceSpec = object;
 type ContainerSpec = object;
-export interface MuSpec {
+export interface MutatoSpec {
   actions: ActionSpec[];
   containers: ContainerSpec[];
   environments: Map<string, ResourceSpec[]>;
 }
 
 /**
- * mu.yml parser
+ * mutato.yml parser
  *
  * this class glues all the components for the parser together
  */
 export class Parser {
   /**
-   * parses the input mu.yml string
+   * parses the input mutato.yml string
    *
-   * @param input mu.yml as a string
+   * @param input mutato.yml as a string
+   * @returns parsed and organized mutato.yml object
    */
-  public parse(input: string): MuSpec {
-    _debug('attempting to parse mu.yml string: %s', input);
+  public parse(input: string): MutatoSpec {
+    _debug('attempting to parse mutato.yml string: %s', input);
     _debug('going for the first pass, extracting environments');
 
     // during the first pass, we just want to figure out what environments we

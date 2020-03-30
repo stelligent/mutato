@@ -6,7 +6,7 @@ import ms from 'ms';
 import nunjucks from 'nunjucks';
 import { config } from '../config';
 
-const _debug = debug('mu:parser:PreProcessor');
+const _debug = debug('mutato:parser:PreProcessor');
 type StringMap = { [key: string]: string };
 
 /**
@@ -14,6 +14,7 @@ type StringMap = { [key: string]: string };
  *
  * @param name environment variable name
  * @returns environment variable value, empty string if not found
+ * @ignore
  */
 function nunjucks_env_global(name: string): string {
   _debug('attempting to resolve environment variable %s', name);
@@ -27,6 +28,7 @@ function nunjucks_env_global(name: string): string {
  * @param command shell command execute. can contain shell operators
  * @returns string output of the executed command the output is trimmed
  * from whitespace and newlines (trailing newline as well)
+ * @ignore
  */
 function nunjucks_cmd_global(command: string): string {
   _debug('attempting to execute command %s', command);
@@ -40,7 +42,7 @@ function nunjucks_cmd_global(command: string): string {
 }
 
 /**
- * mu.yml template pre processor
+ * mutato.yml template pre processor
  *
  * internally this class sets up a custom Nunjucks Environment with useful
  * helper functions and processes input Nunjucks templates

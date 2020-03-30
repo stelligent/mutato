@@ -2,7 +2,7 @@ import debug from 'debug';
 import _ from 'lodash';
 import yaml from 'yaml';
 
-const _debug = debug('mu:parser:Loader');
+const _debug = debug('mutato:parser:Loader');
 
 /** fault tolerant multi document YAML loader */
 export class Loader {
@@ -10,7 +10,9 @@ export class Loader {
    * Loads a multi-document YAML string into JSON objects. This method is fault
    * tolerant and does not throw if one of the documents fail to load. Returns
    * only successfully loaded ones.
+   *
    * @param input a multi-document YAML string
+   * @returns YAML documents in the form of multiple JSON objects
    */
   public load(input: string): object[] {
     _debug('loading input YAML: %s', input);

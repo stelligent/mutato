@@ -10,7 +10,7 @@ import _ from 'lodash';
 import path from 'path';
 import * as Actions from './actions';
 import { config } from './config';
-import { MuSpec, Parser } from './parser';
+import { MutatoSpec, Parser } from './parser';
 import { Container } from './resources/container';
 import { Network } from './resources/network';
 import { Service } from './resources/service';
@@ -47,7 +47,7 @@ export class App extends cdk.App {
   public async synthesizeFromString(string: string): Promise<void> {
     this._debug('synthesizing Mu app from string: %s', string);
     const muYmlObject = this._parser.parse(string);
-    await this.synthesizeFromObject(muYmlObject as MuSpec);
+    await this.synthesizeFromObject(muYmlObject as MutatoSpec);
   }
 
   /**
@@ -55,7 +55,7 @@ export class App extends cdk.App {
    *
    * @param spec a valid Mu YAML object
    */
-  public async synthesizeFromObject(spec: MuSpec): Promise<void> {
+  public async synthesizeFromObject(spec: MutatoSpec): Promise<void> {
     this._debug('synthesizing Mu app from object: %o', spec);
     assert.ok(_.isObject(spec));
 
