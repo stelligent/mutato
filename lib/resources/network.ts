@@ -16,11 +16,16 @@ export class Network extends cdk.Construct {
   public readonly vpc: ec2.Vpc;
   public readonly cluster: ecs.Cluster;
 
-  /** @hideconstructor */
+  /**
+   * @hideconstructor
+   * @param scope CDK scope
+   * @param id CDK construct id
+   * @param props CDK construct parameters
+   */
   constructor(scope: cdk.Construct, id: string, props?: NetworkProps) {
     super(scope, id);
 
-    this._debug = debug(`mu:constructs:Network:${id}`);
+    this._debug = debug(`mutato:constructs:Network:${id}`);
     this._props = _.defaults(props, {});
 
     this._debug('creating a network construct with props: %o', this._props);
