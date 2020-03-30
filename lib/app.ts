@@ -299,13 +299,16 @@ export class App extends cdk.App {
     }
 
     Array.from(spec.environments.keys()).forEach((envName) => {
+      const resources = spec.environments.get(envName);
+      if (resources?.length === 1) {
+        this._debug('environment is empty, skipping it: %s', envName);
+        return;
+      }
       const queryConstruct = (type: string): object[] =>
         _.filter(
-          (spec.environments
-            .get(envName)
-            ?.filter((c) => _.head(_.keys(c)) === type) as object[]).map((c) =>
-            _.get(c, type),
-          ),
+          (resources?.filter(
+            (c) => _.head(_.keys(c)) === type,
+          ) as object[]).map((c) => _.get(c, type)),
         );
       const environment = _.head(queryConstruct('environment'));
       this._debug('creating environment: %s / %o', envName, environment);
