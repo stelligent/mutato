@@ -4,3 +4,11 @@ containers:
       name: mutato
       file: Dockerfile
       uri: stelligent/mutato
+      events:
+        post-build: npm-deploy
+---
+actions:
+  - docker:
+      name: npm-deploy
+      container: node:lts
+      cmd: npm install
