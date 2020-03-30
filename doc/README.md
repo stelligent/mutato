@@ -31,10 +31,14 @@ resources:
         maxAZs: {{ 1 if environment == "acceptance" else 3 }}
 ```
 
-Execute the following to deploy your microservice:
+Obtain a [GitHub OAuth
+token](https://help.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token).
+We assume you have this available in your `$PATH` under `$GITHUB_TOKEN`. Execute
+the following to deploy your microservice:
 
 ```bash
-$ aws-vault exec <profile name> -- env | grep AWS_ > mutato.env
+$ echo $GITHUB_TOKEN > mutato.env
+$ aws-vault exec <profile name> -- env | grep AWS_ >> mutato.env
 $ docker run --env-file mutato.env stelligent/mutato bootstrap
 $ docker run --env-file mutato.env -v /path/to/your/github/repo:/project stelligent/mutato deploy
 ```
