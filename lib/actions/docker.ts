@@ -13,7 +13,10 @@ interface DockerBuildProps extends ActionPropsInterface {
 
 /** "docker build" convenience action */
 export class DockerBuild extends CodeBuild {
-  /** @hideconstructor */
+  /**
+   * @hideconstructor
+   * @param props build parameters
+   */
   constructor(props: DockerBuildProps) {
     super({
       ...props,
@@ -44,7 +47,10 @@ interface DockerRunProps extends ActionPropsInterface {
 
 /** "docker run" convenience action */
 export class DockerRun extends CodeBuild {
-  /** @hideconstructor */
+  /**
+   * @hideconstructor
+   * @param props run parameters
+   */
   constructor(props: DockerRunProps) {
     super({
       ...props,

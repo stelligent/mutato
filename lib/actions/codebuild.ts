@@ -9,7 +9,7 @@ import { config } from '../config';
 import { Container } from '../resources/container';
 import { ActionInterface, ActionPropsInterface } from './interface';
 
-const _debug = debug('mu:actions:CodeBuild');
+const _debug = debug('mutato:actions:CodeBuild');
 
 interface CodeBuildProps extends ActionPropsInterface {
   buildImage?: codeBuild.IBuildImage;
@@ -25,7 +25,10 @@ export class CodeBuild implements ActionInterface {
   private readonly _props: CodeBuildProps;
   public readonly name: string;
 
-  /** @hideconstructor */
+  /**
+   * @hideconstructor
+   * @param props codebuild parameters
+   */
   constructor(props: CodeBuildProps) {
     this._props = _.defaults(props, { order: 1, privileged: false });
     assert.ok(this._props.pipeline);
@@ -34,8 +37,13 @@ export class CodeBuild implements ActionInterface {
     this.name = this._props.name;
   }
 
-  /** creates a manual approval action in the pipeline */
-  public action(requester: string): codePipelineActions.CodeBuildAction {
+  /**
+   * creates a codebuild approval action in the pipeline
+   *
+   * @param requester a unique ID used to prevent action duplication
+   * @returns action construct to be added into a code pipeline
+   */
+  public action(requester = 'default'): codePipelineActions.CodeBuildAction {
     _debug('creating a code build action with props: %o', this._props);
     const project = new codeBuild.PipelineProject(
       cdk.Stack.of(this._props.pipeline),

@@ -5,7 +5,7 @@ import _ from 'lodash';
 import { config } from '../config';
 import { ActionInterface, ActionPropsInterface } from './interface';
 
-const _debug = debug('mu:actions:Approval');
+const _debug = debug('mutato:actions:Approval');
 
 interface ApprovalProps extends ActionPropsInterface {
   emails?: string[];
@@ -16,15 +16,25 @@ export class Approval implements ActionInterface {
   private readonly _props: ApprovalProps;
   public readonly name: string;
 
-  /** @hideconstructor */
+  /**
+   * @hideconstructor
+   * @param props approval parameters
+   */
   constructor(props: ApprovalProps) {
     this._props = _.defaults(props, { order: 1 });
     assert.ok(this._props.name);
     this.name = this._props.name;
   }
 
-  /** creates a manual approval action in the pipeline */
-  public action(requester: string): codePipelineActions.ManualApprovalAction {
+  /**
+   * creates a manual approval action in the pipeline
+   *
+   * @param requester a unique ID used to prevent action duplication
+   * @returns action construct to be added into a code pipeline
+   */
+  public action(
+    requester = 'default',
+  ): codePipelineActions.ManualApprovalAction {
     _debug('creating a manual approval with props: %o', this._props);
     const git = config.getGithubMetaData();
     return new codePipelineActions.ManualApprovalAction({
