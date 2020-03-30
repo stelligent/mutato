@@ -1,7 +1,7 @@
-- [Mutato](#mutato)
-    - [Table of Contents](#table-of-contents)
-    - [Getting started](#getting-started)
-    - [Contributing](#contributing)
-    - [Documentation](#documentation)
-    - [Q & A](#q-amp-a)
-- [Constructs](api/index.md)
+<!-- docs/_sidebar.md -->
+
+- [Home](/)
+- [mutato.yml](mutato-yaml.md 'YAML Reference specification')
+- [mutato container](mutato-docker.md 'Docker Container Documentation')
+- [extending mutato](mutato-cdk.md 'Extending Mutato in CDK')
+- [API](api.md 'Low level CDK API documentation')
