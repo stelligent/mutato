@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "christian-kohler.npm-intellisense",
+    "DavidAnson.vscode-markdownlint",
+    "dbaeumer.vscode-eslint",
+    "eg2.vscode-npm-script",
+    "esbenp.prettier-vscode",
+    "ms-vscode.vscode-typescript-tslint-plugin",
+    "stkb.rewrap",
+    "yzhang.markdown-all-in-one"
+  ]
+}

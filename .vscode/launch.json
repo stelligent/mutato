@@ -1,0 +1,26 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Current Mocha Test",
+      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+      "args": ["--timeout", "0", "--colors", "${file}"],
+      "internalConsoleOptions": "openOnSessionStart",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug EntryPoint",
+      "program": "${workspaceFolder}/bin/mu.ts",
+      "preLaunchTask": "npm: build",
+      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "skipFiles": ["<node_internals>/**"],
+      "cwd": "${workspaceFolder}",
+      "env": { "DEBUG": "mu*" },
+      "console": "integratedTerminal"
+    }
+  ]
+}
