@@ -118,7 +118,7 @@ export class Container extends cdk.Construct {
     const commitTag = `${t.substring(
       0,
       t.indexOf(':') < 0 ? undefined : t.indexOf(':'),
-    )}:${config.opts.git.commit}`;
+    )}:$mutato_opts__git__commit`;
     const ctx = this.props.context;
     return `docker build ${buildArgs} -t ${t} -t ${commitTag} -f ${f} ${ctx}`;
   }
@@ -130,7 +130,7 @@ export class Container extends cdk.Construct {
     const commitTag = `${t.substring(
       0,
       t.indexOf(':') < 0 ? undefined : t.indexOf(':'),
-    )}:${config.opts.git.commit}`;
+    )}:$mutato_opts__git__commit`;
     return `docker push ${t} && docker push ${commitTag}`;
   }
 }
