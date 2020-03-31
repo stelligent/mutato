@@ -115,10 +115,7 @@ export class Container extends cdk.Construct {
     ).trim();
     const f = this.props.file;
     const t = this.getImageUri();
-    const commitTag = `${t.substring(
-      0,
-      t.indexOf(':') < 0 ? undefined : t.indexOf(':'),
-    )}:$mutato_opts__git__commit`;
+    const commitTag = `${t}:$mutato_opts__git__commit`;
     const ctx = this.props.context;
     return `docker build ${buildArgs} -t ${t} -t ${commitTag} -f ${f} ${ctx}`;
   }
@@ -127,10 +124,7 @@ export class Container extends cdk.Construct {
   get pushCommand(): string {
     assert.ok(this.needsBuilding, 'container is not part of the pipeline');
     const t = this.getImageUri();
-    const commitTag = `${t.substring(
-      0,
-      t.indexOf(':') < 0 ? undefined : t.indexOf(':'),
-    )}:$mutato_opts__git__commit`;
+    const commitTag = `${t}:$mutato_opts__git__commit`;
     return `docker push ${t} && docker push ${commitTag}`;
   }
 }
