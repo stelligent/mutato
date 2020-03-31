@@ -1,9 +1,9 @@
 import * as codeBuild from '@aws-cdk/aws-codebuild';
 import * as codePipeline from '@aws-cdk/aws-codepipeline';
-import { config } from '../config';
 import { Container } from '../resources/container';
 import { CodeBuild } from './codebuild';
 import { ActionPropsInterface } from './interface';
+import _ from 'lodash';
 
 interface DockerBuildProps extends ActionPropsInterface {
   container: Container;
@@ -39,10 +39,8 @@ interface DockerRunProps extends ActionPropsInterface {
   container: Container;
   pipeline: codePipeline.Pipeline;
   source: codePipeline.Artifact;
+  cmd?: string | string[];
   privileged?: boolean;
-  args?: string;
-  env?: { [key: string]: string };
-  cmd: string;
 }
 
 /** "docker run" convenience action */
@@ -57,19 +55,8 @@ export class DockerRun extends CodeBuild {
       spec: {
         version: 0.2,
         phases: {
-          install: { 'runtime-versions': { docker: 18 } },
-          pre_build: { commands: [props.container.loginCommand] },
           build: {
-            commands: [
-              props.container.runCommand({
-                cmd: props.cmd,
-                args: props.args,
-                env: {
-                  ...config.toStringEnvironmentMap(),
-                  ...props.env,
-                },
-              }),
-            ],
+            commands: _.isString(props.cmd) ? [props.cmd] : props.cmd,
           },
         },
       },
