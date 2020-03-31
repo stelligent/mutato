@@ -110,45 +110,5 @@ describe('Container Construct Tests', () => {
       const uri = construct.getImageUri();
       chai.expect(construct.pushCommand).to.be.equal(`docker push ${uri}`);
     });
-
-    it('should ba able to generate a run command', () => {
-      const app = new cdk.App();
-      const stack = new cdk.Stack(app, 'MyTestStack');
-      const construct = new Container(stack, 'MyTestContainer', {
-        uri: 'ubuntu',
-      });
-
-      const uri = construct.getImageUri();
-      chai
-        .expect(
-          construct.runCommand({
-            cmd: 'sh -c "exit 0"',
-            args: '-t --init',
-          }),
-        )
-        .to.be.equal(`docker run -t --init  ${uri} sh -c "exit 0"`);
-      chai
-        .expect(
-          construct.runCommand({
-            cmd: 'sh -c "exit 0"',
-          }),
-        )
-        .to.be.equal(
-          `docker run -t --rm -v $(pwd):/project -w /project  ${uri} sh -c "exit 0"`,
-        );
-      chai
-        .expect(
-          construct.runCommand({
-            cmd: 'sh -c "exit 0"',
-            env: {
-              foo: 'bar',
-              var: 'val',
-            },
-          }),
-        )
-        .to.be.equal(
-          `docker run -t --rm -v $(pwd):/project -w /project -e foo="bar" -e var="val" ${uri} sh -c "exit 0"`,
-        );
-    });
   });
 });
