@@ -96,22 +96,10 @@ export class App extends cdk.App {
       // propagate this machine's configuration into CodeBuild since Git
       // metadata and other utilities are unavailable in that environment
       ...config.toBuildEnvironmentMap(),
-      USER: {
-        type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-        value: 'root',
-      },
-      DEBUG: {
-        type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-        value: 'mutato*',
-      },
-      DEBUG_COLORS: {
-        type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-        value: '0',
-      },
-      mutato_opts__git__commit: {
-        type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-        value: source.variables.commitId,
-      },
+      USER: { value: 'root' },
+      DEBUG: { value: 'mutato*' },
+      DEBUG_COLORS: { value: '0' },
+      mutato_opts__git__commit: { value: source.variables.commitId },
     };
     this._debug('environment of CodeBuild: %o', environmentVariables);
 

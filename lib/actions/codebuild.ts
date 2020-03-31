@@ -62,13 +62,6 @@ export class CodeBuild implements ActionInterface {
                   this._props.container?.getImageUri(),
                 )
             : undefined,
-          environmentVariables: {
-            ...config.toBuildEnvironmentMap(),
-            mutato_opts__git__commit: {
-              type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-              value: this._props.sourceAction.variables.commitId,
-            },
-          },
           privileged: this._props.privileged,
         },
         buildSpec: _.isObject(this._props.spec)
@@ -81,6 +74,12 @@ export class CodeBuild implements ActionInterface {
     const action = new codePipelineActions.CodeBuildAction({
       actionName: `${this.name}-${requester}`,
       input: this._props.source,
+      environmentVariables: {
+        ...config.toBuildEnvironmentMap(),
+        mutato_opts__git__commit: {
+          value: this._props.sourceAction.variables.commitId,
+        },
+      },
       project,
     });
 
