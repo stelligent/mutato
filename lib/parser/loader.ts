@@ -1,27 +1,21 @@
 import debug from 'debug';
+import assert from 'assert';
 import _ from 'lodash';
 import yaml from 'yaml';
 
 const _debug = debug('mutato:parser:Loader');
 
-/** fault tolerant multi document YAML loader */
+/** single document YAML loader */
 export class Loader {
   /**
-   * Loads a multi-document YAML string into JSON objects. This method is fault
-   * tolerant and does not throw if one of the documents fail to load. Returns
-   * only successfully loaded ones.
-   *
-   * @param input a multi-document YAML string
-   * @returns YAML documents in the form of multiple JSON objects
+   * @param input a single-document YAML string
+   * @returns YAML document in the form of single JSON object
    */
-  public load(input: string): object[] {
+  public load(input: string): object {
     _debug('loading input YAML: %s', input);
-    const parsed = yaml.parseAllDocuments(input);
-    _debug('parsed YAML: %o', parsed);
-    const documents = parsed.filter((document) => _.isEmpty(document.errors));
-    _debug('no-error documents: %o', documents);
-    const converted = documents.map((document) => document.toJSON());
-    _debug('converted documents: %o', converted);
-    return converted;
+    const document = yaml.parseDocument(input);
+    _debug('parsed document: %o', document);
+    assert.ok(_.isEmpty(document.errors), 'failed to parse the input YAML');
+    return document.toJSON();
   }
 }
