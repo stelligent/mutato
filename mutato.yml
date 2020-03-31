@@ -22,4 +22,4 @@ actions:
         - npm install --allow-root --unsafe-perm
         - npm run build
         - echo //registry.npmjs.org/:_authToken={{ env("NPM_TOKEN") }} > .npmrc
-        - npm publish
+        - npm publish --access=public
