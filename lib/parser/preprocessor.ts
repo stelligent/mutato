@@ -50,6 +50,7 @@ function nunjucks_cmd_global(command: string): string {
 export class PreProcessor {
   private readonly env: nunjucks.Environment;
   private readonly ctx: object;
+  public readonly usedEnvironmentVariables: { [key: string]: string } = {};
 
   /**
    * @hideconstructor
@@ -67,7 +68,11 @@ export class PreProcessor {
     this.ctx = { ...context, build_time: Date.now() };
     _debug('a new preprocessor is initialized with context: %o', this.ctx);
 
-    this.env.addGlobal('env', nunjucks_env_global);
+    this.env.addGlobal('env', (name: string) => {
+      const resolved = nunjucks_env_global(name);
+      _.set(this.usedEnvironmentVariables, name, resolved);
+      return resolved;
+    });
     this.env.addGlobal('cmd', nunjucks_cmd_global);
   }
 

@@ -96,6 +96,7 @@ export class App extends cdk.App {
       // propagate this machine's configuration into CodeBuild since Git
       // metadata and other utilities are unavailable in that environment
       ...config.toBuildEnvironmentMap(),
+      ...config.toBuildEnvironmentMap(spec.environmentVariables),
       USER: { value: 'root' },
       DEBUG: { value: 'mutato*' },
       DEBUG_COLORS: { value: '0' },

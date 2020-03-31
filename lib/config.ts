@@ -85,9 +85,9 @@ export const config = rcTyped('mutato', {
       ]);
     }, {}) as StringEnvironmentVariableMap;
   },
-  toBuildEnvironmentMap() {
+  toBuildEnvironmentMap(variables?: StringEnvironmentVariableMap) {
     return _.transform(
-      this.toStringEnvironmentMap(),
+      variables ? variables : this.toStringEnvironmentMap(),
       (result: BuildEnvironmentVariableMap, value, key) => {
         result[key] = {
           type: BuildEnvironmentVariableType.PLAINTEXT,

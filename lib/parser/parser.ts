@@ -14,6 +14,7 @@ export interface MutatoSpec {
   actions: ActionSpec[];
   containers: ContainerSpec[];
   environments: Map<string, ResourceSpec[]>;
+  environmentVariables: { [key: string]: string };
 }
 
 /**
@@ -71,6 +72,7 @@ export class Parser {
     return {
       actions: actionSpecs,
       containers: containerSpecs,
+      environmentVariables: environmentPreprocessor.usedEnvironmentVariables,
       environments,
     };
   }
