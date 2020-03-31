@@ -12,12 +12,13 @@ actions:
       name: npm-test
       container: node:lts
       cmd:
-        - npm install
+        - npm install --allow-root --unsafe-perm
         - USER=root npm test
 
   - docker:
       name: npm-deploy
       container: node:lts
       cmd:
-        - npm install
+        - npm install --allow-root --unsafe-perm
+        - npm run build
         - NPM_TOKEN={{ env("NPM_TOKEN") }} npm publish
