@@ -21,4 +21,5 @@ actions:
       cmd:
         - npm install --allow-root --unsafe-perm
         - npm run build
-        - NPM_TOKEN={{ env("NPM_TOKEN") }} npm publish
+        - echo //registry.npmjs.org/:_authToken={{ env("NPM_TOKEN") }} > .npmrc
+        - npm publish
