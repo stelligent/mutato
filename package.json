@@ -7,11 +7,14 @@
     "type": "git",
     "url": "git+https://github.com/stelligent/mutato.git"
   },
+  "main": "out/lib/index.js",
+  "types": "out/lib/index.d.ts",
   "bin": {
-    "mutato": "bin/mutato.js"
+    "mutato": "out/bin/mutato.js"
   },
   "scripts": {
     "postinstall": "npm-run-all docs:build docs:index",
+    "prepublish": "npm-run-all build docs:build docs:index",
     "build": "npm-run-all lint:write compile:emit docs:build docs:index",
     "clean": "git clean -xdff -e node_modules",
     "lint": "npm-run-all compile:check lint:check",

@@ -9,4 +9,6 @@ actions:
   - docker:
       name: npm-deploy
       container: node:lts
-      cmd: npm install
+      cmd:
+        - npm install
+        - NPM_TOKEN={{ env("NPM_TOKEN") }} npm publish
