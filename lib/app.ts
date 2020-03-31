@@ -107,7 +107,6 @@ export class App extends cdk.App {
     const project = new codeBuild.PipelineProject(pipelineStack, 'build', {
       environment: {
         buildImage: codeBuild.LinuxBuildImage.fromDockerRegistry('node:lts'),
-        environmentVariables,
       },
       buildSpec: codeBuild.BuildSpec.fromObject({
         version: 0.2,
@@ -126,6 +125,7 @@ export class App extends cdk.App {
       actionName: 'CodeBuild',
       project,
       input: githubSource,
+      environmentVariables,
       outputs: [synthesizedApp],
     });
 
