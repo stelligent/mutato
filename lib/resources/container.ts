@@ -115,13 +115,22 @@ export class Container extends cdk.Construct {
     ).trim();
     const f = this.props.file;
     const t = this.getImageUri();
-    // TODO: escape for shell args here to prevent shell attacks
-    return `docker build ${buildArgs} -t ${t} -f ${f} ${this.props.context}`;
+    const commitTag = `${t.substring(
+      0,
+      t.indexOf(':') < 0 ? undefined : t.indexOf(':'),
+    )}:${config.opts.git.commit}`;
+    const ctx = this.props.context;
+    return `docker build ${buildArgs} -t ${t} -t ${commitTag} -f ${f} ${ctx}`;
   }
 
   /** @returns shell command containing "docker push" */
   get pushCommand(): string {
     assert.ok(this.needsBuilding, 'container is not part of the pipeline');
-    return `docker push ${this.getImageUri()}`;
+    const t = this.getImageUri();
+    const commitTag = `${t.substring(
+      0,
+      t.indexOf(':') < 0 ? undefined : t.indexOf(':'),
+    )}:${config.opts.git.commit}`;
+    return `docker push ${t} && docker push ${commitTag}`;
   }
 }

@@ -1,5 +1,6 @@
 import * as codeBuild from '@aws-cdk/aws-codebuild';
 import * as codePipeline from '@aws-cdk/aws-codepipeline';
+import * as codePipelineActions from '@aws-cdk/aws-codepipeline-actions';
 import { Container } from '../resources/container';
 import { CodeBuild } from './codebuild';
 import { ActionPropsInterface } from './interface';
@@ -9,6 +10,7 @@ interface DockerBuildProps extends ActionPropsInterface {
   container: Container;
   pipeline: codePipeline.Pipeline;
   source: codePipeline.Artifact;
+  sourceAction: codePipelineActions.GitHubSourceAction;
 }
 
 /** "docker build" convenience action */
@@ -39,6 +41,7 @@ interface DockerRunProps extends ActionPropsInterface {
   container: Container;
   pipeline: codePipeline.Pipeline;
   source: codePipeline.Artifact;
+  sourceAction: codePipelineActions.GitHubSourceAction;
   cmd?: string | string[];
   privileged?: boolean;
 }

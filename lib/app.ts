@@ -108,6 +108,10 @@ export class App extends cdk.App {
         type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
         value: '0',
       },
+      mutato_opts__git__commit: {
+        type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
+        value: source.variables.commitId,
+      },
     };
     this._debug('environment of CodeBuild: %o', environmentVariables);
 
@@ -192,6 +196,7 @@ export class App extends cdk.App {
             ...prop,
             pipeline,
             source: githubSource,
+            sourceAction: source,
             container: queryContainer(prop.container, name),
           });
         case 'codebuild':
@@ -200,6 +205,7 @@ export class App extends cdk.App {
             ...prop,
             pipeline,
             source: githubSource,
+            sourceAction: source,
             container: _.isString(prop.container)
               ? queryContainer(prop.container, name)
               : undefined,
@@ -274,6 +280,7 @@ export class App extends cdk.App {
           new Actions.DockerBuild({
             name: `build-${container.node.id}`,
             source: githubSource,
+            sourceAction: source,
             container,
             pipeline,
           }).action(container.node.id),

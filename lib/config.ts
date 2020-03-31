@@ -28,6 +28,7 @@ function rcTyped<T>(name: string, defaults: T): T {
 const gitC = _.get(process.env, 'mutato_opts__git__local', process.cwd());
 const gitRemoteCmd = `git -C "${gitC}" config --get remote.origin.url || true`;
 const gitBranchCmd = `git -C "${gitC}" rev-parse --abbrev-ref HEAD || true`;
+const gitCommitCmd = `git -C "${gitC}" rev-parse HEAD || true`;
 
 type StringEnvironmentVariableMap = { [key: string]: string };
 type BuildEnvironmentVariableMap = { [key: string]: BuildEnvironmentVariable };
@@ -37,6 +38,9 @@ export const config = rcTyped('mutato', {
   opts: {
     git: {
       local: gitC,
+      commit: cp
+        .execSync(gitCommitCmd, { encoding: 'utf8', timeout: 1000 })
+        .trim(),
       remote: cp
         .execSync(gitRemoteCmd, { encoding: 'utf8', timeout: 1000 })
         .trim(),
@@ -75,7 +79,10 @@ export const config = rcTyped('mutato', {
     return traverse(this).reduce(function (acc, x) {
       if (this.isLeaf && this.key !== '_' && !_.isFunction(x))
         acc[`mutato_${this.path.join('__')}`] = `${x}`;
-      return _.omit(acc, 'mutato_opts__git__local');
+      return _.omit(acc, [
+        'mutato_opts__git__local',
+        'mutato_opts__git__commit',
+      ]);
     }, {}) as StringEnvironmentVariableMap;
   },
   toBuildEnvironmentMap() {

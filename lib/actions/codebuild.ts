@@ -16,6 +16,7 @@ interface CodeBuildProps extends ActionPropsInterface {
   container?: Container;
   pipeline: codePipeline.Pipeline;
   source: codePipeline.Artifact;
+  sourceAction: codePipelineActions.GitHubSourceAction;
   spec: object | string;
   privileged?: boolean;
 }
@@ -61,7 +62,13 @@ export class CodeBuild implements ActionInterface {
                   this._props.container?.getImageUri(),
                 )
             : undefined,
-          environmentVariables: config.toBuildEnvironmentMap(),
+          environmentVariables: {
+            ...config.toBuildEnvironmentMap(),
+            mutato_opts__git__commit: {
+              type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
+              value: this._props.sourceAction.variables.commitId,
+            },
+          },
           privileged: this._props.privileged,
         },
         buildSpec: _.isObject(this._props.spec)
