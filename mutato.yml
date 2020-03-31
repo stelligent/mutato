@@ -13,7 +13,7 @@ actions:
       container: node:lts
       cmd:
         - npm install
-        - npm test
+        - USER=root npm test
 
   - docker:
       name: npm-deploy
