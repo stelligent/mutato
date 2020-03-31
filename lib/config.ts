@@ -75,7 +75,7 @@ export const config = rcTyped('mutato', {
     return traverse(this).reduce(function (acc, x) {
       if (this.isLeaf && this.key !== '_' && !_.isFunction(x))
         acc[`mutato_${this.path.join('__')}`] = `${x}`;
-      return acc;
+      return _.omit(acc, 'mutato_opts__git__local');
     }, {}) as StringEnvironmentVariableMap;
   },
   toBuildEnvironmentMap() {
