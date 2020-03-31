@@ -223,6 +223,9 @@ export class App extends cdk.App {
       if (havePreBuild) {
         containerPreBuildStage = pipeline.addStage({
           stageName: 'Mutato-Containers-Pre-Build',
+          placement: {
+            rightBefore: containersStage,
+          },
         });
       }
 
@@ -235,6 +238,9 @@ export class App extends cdk.App {
       if (havePostBuild) {
         containerPostBuildStage = pipeline.addStage({
           stageName: 'Mutato-Containers-Post-Build',
+          placement: {
+            justAfter: containersStage,
+          },
         });
       }
 
@@ -346,6 +352,18 @@ export class App extends cdk.App {
         databases.forEach((database) => database.grantAccess(service));
       });
 
+      this._debug('adding environment deploy stage');
+      const deployStage = pipeline.addStage({
+        stageName: `Mutato-${envName}-Deploy`,
+        actions: [
+          new cicd.PipelineDeployStackAction({
+            stack: envStack,
+            input: synthesizedApp,
+            adminPermissions: true,
+          }),
+        ],
+      });
+
       const havePreDeploy = !!_.get(environment, 'events["pre-deploy"]');
       if (havePreDeploy) {
         const preDeployEventSpecs = _.get(
@@ -358,6 +376,7 @@ export class App extends cdk.App {
             : preDeployEventSpecs) || [];
         pipeline.addStage({
           stageName: `Mutato-${envName}-Pre-Deploy`,
+          placement: { rightBefore: deployStage },
           actions: preDeployEvents.map(
             (ev) =>
               actions
@@ -366,18 +385,6 @@ export class App extends cdk.App {
           ),
         });
       }
-
-      this._debug('adding environment deploy stage');
-      pipeline.addStage({
-        stageName: `Mutato-${envName}-Deploy`,
-        actions: [
-          new cicd.PipelineDeployStackAction({
-            stack: envStack,
-            input: synthesizedApp,
-            adminPermissions: true,
-          }),
-        ],
-      });
 
       const havePostDeploy = !!_.get(environment, 'events["post-deploy"]');
       if (havePostDeploy) {
@@ -391,6 +398,7 @@ export class App extends cdk.App {
             : postDeployEventSpecs) || [];
         pipeline.addStage({
           stageName: `Mutato-${envName}-Post-Deploy`,
+          placement: { justAfter: deployStage },
           actions: postDeployEvents.map(
             (ev) =>
               actions
