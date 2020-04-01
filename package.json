@@ -28,7 +28,7 @@
     "bootstrap": "npx cdk bootstrap",
     "destroy": "npx cdk destroy --verbose Mutato-Pipeline*",
     "deploy": "npx cdk deploy --verbose Mutato-Pipeline*",
-    "synth": "npx cdk synth --verbose -o $(ts-node -e \"console.log(require('./lib/config.ts').config.opts.git.local)\")/dist",
+    "synth": "npx cdk synth --verbose -o $(node bin/git-local.js)",
     "cdk": "npx cdk"
   },
   "devDependencies": {
