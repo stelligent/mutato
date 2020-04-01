@@ -2,6 +2,7 @@
 
 - [home](/)
 - [concepts](mutato-concepts.md 'Mutato Concepts')
+- [workflow](mutato-workflow.md 'Deploy workflow')
 - [mutato.yml](mutato-yaml.md 'YAML Reference specification')
 - [mutato container](mutato-docker.md 'Docker Container Documentation')
 - [extending mutato](mutato-cdk.md 'Extending Mutato in CDK')
