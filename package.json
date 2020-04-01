@@ -25,11 +25,11 @@
     "docs:serve": "docsify serve doc/",
     "docs:build": "jsdoc2md --files ./lib/**/*.ts --no-cache --configure ./jsdoc2md.json > ./doc/api.md",
     "docs:index": "cp README.md doc/README.md",
-    "bootstrap": "npx cdk bootstrap",
-    "destroy": "npx cdk destroy --verbose Mutato-Pipeline*",
-    "deploy": "npx cdk deploy --verbose Mutato-Pipeline*",
-    "synth": "npx cdk synth --verbose -o $(node bin/git-local.js)",
-    "cdk": "npx cdk"
+    "bootstrap": "npx cdk --app '$(node bin/cdk-app.js)' bootstrap",
+    "destroy": "npx cdk --app '$(node bin/cdk-app.js)' destroy --verbose Mutato-Pipeline*",
+    "deploy": "npx cdk --app '$(node bin/cdk-app.js)' deploy --verbose Mutato-Pipeline*",
+    "synth": "npx cdk --app '$(node bin/cdk-app.js)' synth --verbose -o $(node bin/git-local.js)",
+    "cdk": "npx cdk --app '$(node bin/cdk-app.js)'"
   },
   "devDependencies": {
     "@aws-cdk/assert": "^1.31.0",

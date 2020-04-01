@@ -182,3 +182,5 @@ temp/
 out
 doc/api.md
 doc/README.md
+!bin/*.ts
+!bin/*.js

@@ -2,7 +2,6 @@
 !lib
 !bin
 !doc
-!cdk.json
 !tsconfig.json
 !package.json
 !package-lock.json
