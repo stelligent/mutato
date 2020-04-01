@@ -35,10 +35,11 @@ We assume you have this available in your `$PATH` under `$GITHUB_TOKEN`. Execute
 the following to deploy your microservice:
 
 ```bash
-$ echo $GITHUB_TOKEN > mutato.env
+$ cd /path/to/your/github/repo
+$ echo "GITHUB_TOKEN=$GITHUB_TOKEN" > mutato.env
 $ aws-vault exec <profile name> -- env | grep AWS_ >> mutato.env
-$ docker run --env-file mutato.env stelligent/mutato bootstrap
-$ docker run --env-file mutato.env -v /path/to/your/github/repo:/project stelligent/mutato deploy
+$ docker run -it --rm --env-file mutato.env -v `pwd`:/project stelligent/mutato bootstrap
+$ docker run -it --rm --env-file mutato.env -v `pwd`:/project stelligent/mutato deploy
 ```
 
 This gives you a load balanced NGINX server in two separate environments and the
