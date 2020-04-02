@@ -4,6 +4,7 @@ import * as codePipeline from '@aws-cdk/aws-codepipeline';
 import * as codePipelineActions from '@aws-cdk/aws-codepipeline-actions';
 import * as s3Assets from '@aws-cdk/aws-s3-assets';
 import * as cdk from '@aws-cdk/core';
+import * as lambda from '@aws-cdk/aws-lambda';
 import assert from 'assert';
 import debug from 'debug';
 import fs from 'fs';
@@ -116,15 +117,23 @@ export class App extends cdk.App {
     // CodeBuild environment. in that case, we capture mutato's source into .zip
     // and send it to CodeBuild as a CDK asset. CodeBuild won't re-run this code
     // since "config.opts.asset" is defined for it.
-    let mutatoAsset: s3Assets.Asset | null = null;
-    if (!config.opts.asset) {
+    let mutatoLambda: lambda.Function | null = null;
+    const lambdaName = __('mutato');
+    if (!process.env.CODEBUILD_BUILD_ID) {
       this._debug('running outside of CodeBuild, package up mutato');
-      mutatoAsset = new s3Assets.Asset(pipelineStack, 'mutato-asset', {
+      const mutatoAsset = new s3Assets.Asset(pipelineStack, 'mutato-asset', {
         exclude: toGlob('.gitignore'),
         path: process.cwd(),
       });
-      _.set(environmentVariables, 'mutato_opts__asset', {
-        value: mutatoAsset.s3Url,
+      mutatoLambda = new lambda.Function(pipelineStack, 'mutato-lambda', {
+        runtime: lambda.Runtime.NODEJS_12_X,
+        handler: 'index.handler',
+        functionName: lambdaName,
+        code: lambda.Code.fromInline(`
+          exports.handler = async function() {
+            return '${mutatoAsset.s3Url}';
+          }
+        `),
       });
     }
 
@@ -138,14 +147,21 @@ export class App extends cdk.App {
         phases: {
           build: {
             commands: [
+              // install AWS CLI
+              'curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"',
+              'unzip awscli-bundle.zip',
+              './awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws',
+              // find the mutato bundle address
+              `aws lambda invoke --function-name ${lambdaName} invoke.log`,
+              `export MUTATO_BUNDLE=$(cat invoke.log | sed 's/"//g')`,
               // make sure mutato knows where user's repo is mounted
               'export mutato_opts__git__local=`pwd`',
               // create a working directory for mutato:
               'mkdir -p /mutato && cd /mutato',
               // pull down mutato's source used to create this pipeline
-              'wget $mutato_opts__asset',
+              'wget $MUTATO_BUNDLE',
               // unzip mutato into its working directory
-              'unzip $(basename $mutato_opts__asset)',
+              'unzip $(basename $MUTATO_BUNDLE)',
               // do cdk synth, mutato knows about user's repo over env vars
               'npm install && npm run synth',
             ],
@@ -154,7 +170,7 @@ export class App extends cdk.App {
         artifacts: { 'base-directory': 'dist', files: '**/*' },
       }),
     });
-    mutatoAsset?.grantRead(project);
+    mutatoLambda?.grantInvoke(project);
 
     this._debug('creating an artifact to store synthesized self');
     const synthesizedApp = new codePipeline.Artifact();
