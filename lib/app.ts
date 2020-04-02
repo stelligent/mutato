@@ -173,6 +173,7 @@ export class App extends cdk.App {
     });
     mutatoLambda?.grantInvoke(project);
     mutatoAssets?.grantRead(project);
+    mutatoAssets?.bucket.grantRead(project);
 
     this._debug('creating an artifact to store synthesized self');
     const synthesizedApp = new codePipeline.Artifact();
