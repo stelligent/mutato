@@ -157,10 +157,12 @@ export class App extends cdk.App {
               `export MUTATO_BUNDLE=$(cat invoke.log | sed 's/"//g')`,
               // make sure mutato knows where user's repo is mounted
               'export mutato_opts__git__local=`pwd`',
-              // pull mutato's source used to create this pipeline and unzip
-              'curl "$MUTATO_BUNDLE" -o "mutato.zip"',
-              'unzip mutato.zip',
-              'cd mutato',
+              // create a working directory for mutato:
+              'mkdir -p /mutato && cd /mutato',
+              // pull down mutato's source used to create this pipeline
+              'wget $MUTATO_BUNDLE',
+              // unzip mutato into its working directory
+              'unzip $(basename $MUTATO_BUNDLE)',
               // do cdk synth, mutato knows about user's repo over env vars
               'npm install && npm run synth',
             ],
