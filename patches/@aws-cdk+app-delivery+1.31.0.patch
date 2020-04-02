@@ -1,0 +1,13 @@
+diff --git a/node_modules/@aws-cdk/app-delivery/lib/pipeline-deploy-stack-action.js b/node_modules/@aws-cdk/app-delivery/lib/pipeline-deploy-stack-action.js
+index 56cf6be..107b2e4 100644
+--- a/node_modules/@aws-cdk/app-delivery/lib/pipeline-deploy-stack-action.js
++++ b/node_modules/@aws-cdk/app-delivery/lib/pipeline-deploy-stack-action.js
+@@ -18,7 +18,7 @@ class PipelineDeployStackAction {
+         const assets = this.stack.node.metadata.filter(md => md.type === cxapi.ASSET_METADATA);
+         if (assets.length > 0) {
+             // FIXME: Implement the necessary actions to publish assets
+-            throw new Error(`Cannot deploy the stack ${this.stack.stackName} because it references ${assets.length} asset(s)`);
++            //throw new Error(`Cannot deploy the stack ${this.stack.stackName} because it references ${assets.length} asset(s)`);
+         }
+         const createChangeSetRunOrder = props.createChangeSetRunOrder || 1;
+         const executeChangeSetRunOrder = props.executeChangeSetRunOrder || (createChangeSetRunOrder + 1);
