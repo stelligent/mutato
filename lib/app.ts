@@ -153,7 +153,7 @@ export class App extends cdk.App {
               // install AWS CLI
               'curl "s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "aws.zip"',
               'unzip aws.zip',
-              './aws/install -i /usr/local/aws -b /usr/local/bin/aws',
+              './awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws',
               // find the mutato bundle address
               `aws lambda invoke --function-name ${lambdaName} url`,
               `export URL=$(cat url | sed 's/"//g')`,
