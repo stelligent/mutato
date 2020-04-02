@@ -65,14 +65,18 @@ export class App extends cdk.App {
     const git = config.getGithubMetaData();
     this._debug('git meta data extracted: %o', git);
 
+    const __ = function (name: string): string {
+      return `${name}-${git.identifier}`;
+    };
+
     this._debug('creating a stack (Mutato Pipeline)');
     const pipelineStack = new cdk.Stack(this, 'MutatoPipeline', {
       description: 'pipeline that manages deploy of mutato.yml resources',
-      stackName: `Mutato-Pipeline-${git.identifier}`,
+      stackName: __('Mutato-Pipeline'),
     });
 
     this._debug('creating a CodePipeline to manage Mutato resources');
-    const pipeline = new codePipeline.Pipeline(pipelineStack, 'pipeline', {
+    const pipeline = new codePipeline.Pipeline(pipelineStack, __('pipeline'), {
       restartExecutionOnUpdate: true,
     });
 
@@ -134,18 +138,16 @@ export class App extends cdk.App {
         phases: {
           build: {
             commands: [
-              [
-                // make sure mutato knows where user's repo is mounted
-                'export mutato_opts__git__local=`pwd`',
-                // create a working directory for mutato:
-                'mkdir -p /mutato && cd /mutato',
-                // pull down mutato's source used to create this pipeline
-                'wget $mutato_opts__asset',
-                // unzip mutato into its working directory
-                'unzip $(basename $mutato_opts__asset)',
-                // do cdk synth, mutato knows about user's repo over env vars
-                'npm install && npm run synth',
-              ].join(' && '),
+              // make sure mutato knows where user's repo is mounted
+              'export mutato_opts__git__local=`pwd`',
+              // create a working directory for mutato:
+              'mkdir -p /mutato && cd /mutato',
+              // pull down mutato's source used to create this pipeline
+              'wget $mutato_opts__asset',
+              // unzip mutato into its working directory
+              'unzip $(basename $mutato_opts__asset)',
+              // do cdk synth, mutato knows about user's repo over env vars
+              'npm install && npm run synth',
             ],
           },
         },
@@ -353,7 +355,7 @@ export class App extends cdk.App {
       this._debug('creating a stack (Mutato Resources)');
       const envStack = new cdk.Stack(this, `MutatoResources-${envName}`, {
         description: `application resources for environment: ${envName}`,
-        stackName: `Mutato-App-${envName}-${git.identifier}`,
+        stackName: __(`Mutato-App-${envName}`),
       });
 
       const networkSpecs = queryConstruct('network');
