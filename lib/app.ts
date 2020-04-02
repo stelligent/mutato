@@ -108,7 +108,6 @@ export class App extends cdk.App {
       USER: { value: 'root' },
       DEBUG: { value: 'mutato*' },
       DEBUG_COLORS: { value: '0' },
-      mutato_opts__git__commit: { value: source.variables.commitId },
     };
     this._debug('environment of CodeBuild: %o', environmentVariables);
 
@@ -142,6 +141,7 @@ export class App extends cdk.App {
     const project = new codeBuild.PipelineProject(pipelineStack, 'build', {
       environment: {
         buildImage: codeBuild.LinuxBuildImage.fromDockerRegistry('node:lts'),
+        environmentVariables,
       },
       buildSpec: codeBuild.BuildSpec.fromObject({
         version: 0.2,
@@ -181,8 +181,10 @@ export class App extends cdk.App {
       actionName: 'CodeBuild',
       project,
       input: githubSource,
-      environmentVariables,
       outputs: [synthesizedApp],
+      environmentVariables: {
+        mutato_opts__git__commit: { value: source.variables.commitId },
+      },
     });
 
     this._debug('adding self build action to the pipeline');

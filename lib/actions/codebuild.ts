@@ -63,6 +63,7 @@ export class CodeBuild implements ActionInterface {
                 )
             : undefined,
           privileged: this._props.privileged,
+          environmentVariables: config.toBuildEnvironmentMap(),
         },
         buildSpec: _.isObject(this._props.spec)
           ? codeBuild.BuildSpec.fromObject(this._props.spec)
@@ -75,7 +76,6 @@ export class CodeBuild implements ActionInterface {
       actionName: `${this.name}-${requester}`,
       input: this._props.source,
       environmentVariables: {
-        ...config.toBuildEnvironmentMap(),
         mutato_opts__git__commit: {
           value: this._props.sourceAction.variables.commitId,
         },
