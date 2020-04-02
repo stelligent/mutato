@@ -2,6 +2,7 @@ import * as cicd from '@aws-cdk/app-delivery';
 import * as codeBuild from '@aws-cdk/aws-codebuild';
 import * as codePipeline from '@aws-cdk/aws-codepipeline';
 import * as codePipelineActions from '@aws-cdk/aws-codepipeline-actions';
+import * as s3Assets from '@aws-cdk/aws-s3-assets';
 import * as cdk from '@aws-cdk/core';
 import assert from 'assert';
 import debug from 'debug';
@@ -16,6 +17,8 @@ import { Network } from './resources/network';
 import { Service } from './resources/service';
 import { Storage } from './resources/storage';
 import { Database } from './resources/database';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const toGlob = require('gitignore-globs');
 
 /**
  * This class holds together a Mutato Pipeline (a Stack) and Mutato Resources (a
@@ -104,6 +107,23 @@ export class App extends cdk.App {
     };
     this._debug('environment of CodeBuild: %o', environmentVariables);
 
+    // explanation on WTF is going on here: if "asset" is not configured through
+    // environment variables, that means user is executing mutato outside of the
+    // CodeBuild environment. in that case, we capture mutato's source into .zip
+    // and send it to CodeBuild as a CDK asset. CodeBuild won't re-run this code
+    // since "config.opts.asset" is defined for it.
+    let mutatoAsset: s3Assets.Asset | null = null;
+    if (!config.opts.asset) {
+      this._debug('running outside of CodeBuild, package up mutato');
+      mutatoAsset = new s3Assets.Asset(pipelineStack, 'mutato-asset', {
+        exclude: toGlob('.gitignore'),
+        path: process.cwd(),
+      });
+      _.set(environmentVariables, 'mutato_opts__asset', {
+        value: mutatoAsset.s3Url,
+      });
+    }
+
     this._debug('creating a CodeBuild project that synthesizes myself');
     const project = new codeBuild.PipelineProject(pipelineStack, 'build', {
       environment: {
@@ -112,12 +132,27 @@ export class App extends cdk.App {
       buildSpec: codeBuild.BuildSpec.fromObject({
         version: 0.2,
         phases: {
-          install: { commands: ['npm install'] },
-          build: { commands: ['npm run synth'] },
+          build: {
+            commands: [
+              [
+                // make sure mutato knows where user's repo is mounted
+                'export mutato_opts__git__local=`pwd`',
+                // create a working directory for mutato:
+                'mkdir -p /mutato && cd /mutato',
+                // pull down mutato's source used to create this pipeline
+                'wget $mutato_opts__asset',
+                // unzip mutato into its working directory
+                'unzip $(basename $mutato_opts__asset)',
+                // do cdk synth, mutato knows about user's repo over env vars
+                'npm install && npm run synth',
+              ].join(' && '),
+            ],
+          },
         },
         artifacts: { 'base-directory': 'dist', files: '**/*' },
       }),
     });
+    mutatoAsset?.grantRead(project);
 
     this._debug('creating an artifact to store synthesized self');
     const synthesizedApp = new codePipeline.Artifact();
