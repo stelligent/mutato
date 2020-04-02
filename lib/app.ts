@@ -151,18 +151,17 @@ export class App extends cdk.App {
               // make sure mutato knows where user's repo is mounted
               'export mutato_opts__git__local=`pwd`',
               // install AWS CLI
-              'curl "s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "aws.zip"',
-              'unzip aws.zip',
+              'mkdir -p /aws-cli && cd /aws-cli',
+              'curl "s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"',
+              'unzip awscli-bundle.zip',
               './awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws',
               // find the mutato bundle address
-              `aws lambda invoke --function-name ${lambdaName} url`,
-              `export URL=$(cat url | sed 's/"//g')`,
-              // create a working directory for mutato:
+              `aws lambda invoke --function-name ${lambdaName} invoke.log`,
+              `export MUTATO_BUNDLE=$(cat invoke.log | sed 's/"//g')`,
+              // pull down mutato's bundle used to create this pipeline
               'mkdir -p /mutato && cd /mutato',
-              // pull down mutato's source used to create this pipeline
-              'aws s3 cp $URL.',
-              // unzip mutato into its working directory
-              'unzip $(basename $URL)',
+              'aws s3 cp "$MUTATO_BUNDLE" .',
+              'unzip $(basename "$MUTATO_BUNDLE")',
               // do cdk synth, mutato knows about user's repo over env vars
               'npm install && npm run synth',
             ],
