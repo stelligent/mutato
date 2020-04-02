@@ -118,10 +118,11 @@ export class App extends cdk.App {
     // and send it to CodeBuild as a CDK asset. CodeBuild won't re-run this code
     // since "config.opts.asset" is defined for it.
     let mutatoLambda: lambda.Function | null = null;
+    let mutatoAssets: s3Assets.Asset | null = null;
     const lambdaName = __('mutato');
     if (!process.env.CODEBUILD_BUILD_ID) {
       this._debug('running outside of CodeBuild, package up mutato');
-      const mutatoAsset = new s3Assets.Asset(pipelineStack, 'mutato-asset', {
+      mutatoAssets = new s3Assets.Asset(pipelineStack, 'mutato-asset', {
         exclude: toGlob('.gitignore'),
         path: process.cwd(),
       });
@@ -131,7 +132,7 @@ export class App extends cdk.App {
         functionName: lambdaName,
         code: lambda.Code.fromInline(`
           exports.handler = async function() {
-            return '${mutatoAsset.s3Url}';
+            return '${mutatoAssets.s3Url}';
           }
         `),
       });
@@ -171,6 +172,7 @@ export class App extends cdk.App {
       }),
     });
     mutatoLambda?.grantInvoke(project);
+    mutatoAssets?.grantRead(project);
 
     this._debug('creating an artifact to store synthesized self');
     const synthesizedApp = new codePipeline.Artifact();
