@@ -89,10 +89,7 @@ export const config = rcTyped('mutato', {
     return _.transform(
       variables ? variables : this.toStringEnvironmentMap(),
       (result: BuildEnvironmentVariableMap, value, key) => {
-        result[key] = {
-          type: BuildEnvironmentVariableType.PLAINTEXT,
-          value,
-        };
+        result[key] = { value };
       },
       {},
     );
