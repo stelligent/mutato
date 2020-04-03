@@ -168,6 +168,8 @@ export class App extends cdk.App {
               'unzip $(basename "$MUTATO_BUNDLE")',
               // do cdk synth, mutato knows about user's repo over env vars
               'npm install && npm run synth',
+              // show the user what changes they just pushed
+              'npm run --silent cdk -- diff || true',
             ],
           },
         },
