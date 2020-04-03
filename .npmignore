@@ -7,7 +7,6 @@ test
 .dockerignore
 .eslintignore
 .gitignore
-cdk.json
 CONTRIBUTING.md
 Dockerfile
 jsdoc2md.json

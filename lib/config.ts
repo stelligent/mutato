@@ -1,7 +1,4 @@
-import {
-  BuildEnvironmentVariable,
-  BuildEnvironmentVariableType,
-} from '@aws-cdk/aws-codebuild';
+import { BuildEnvironmentVariable } from '@aws-cdk/aws-codebuild';
 import assert from 'assert';
 import cp from 'child_process';
 import debug from 'debug';
@@ -56,6 +53,10 @@ export const config = rcTyped('mutato', {
     preprocessor: {
       timeout: '10s',
     },
+    bundle: {
+      bucket: '',
+      object: '',
+    },
   },
   getGithubMetaData() {
     const meta = parseGithubUrl(this.opts.git.remote);
@@ -89,10 +90,7 @@ export const config = rcTyped('mutato', {
     return _.transform(
       variables ? variables : this.toStringEnvironmentMap(),
       (result: BuildEnvironmentVariableMap, value, key) => {
-        result[key] = {
-          type: BuildEnvironmentVariableType.PLAINTEXT,
-          value,
-        };
+        result[key] = { value };
       },
       {},
     );

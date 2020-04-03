@@ -1,7 +1,6 @@
 # YAML Reference Specification
 
-_mutato.yml_ is a multi-document YAML file. Each section is divided by the "---"
-identifier. _mutato.yml_ is also a
+_mutato.yml_ is a
 [Nunjucks](https://mozilla.github.io/nunjucks/templating.html) enabled file. You
 can use all that Nunjucks has to offer.
 
@@ -16,7 +15,6 @@ _resources_ section to provide environment specific configuration.
 Example use of Nunjucks is provided below in the reference YAML.
 
 ```YAML
----
 # this section defines the isolated environments "resources" will deploy to.
 # best practice is to separate development and production environments on AWS.
 environments:
@@ -29,7 +27,6 @@ environments:
         # two supported events are: "pre-deploy" and "post-deploy"
         pre-deploy: production-pre-deploy-action
         post-deploy: production-post-deploy-action
----
 # this section defines actions that are triggered on certain events
 # "actions" section is an array of objects
 actions:
@@ -58,7 +55,6 @@ actions:
 
   - approval:
       name: container-pre-build-action
----
 # this section defines containers used by actions and resources
 # "containers" section is an array of objects
 containers:
@@ -77,7 +73,6 @@ containers:
   - docker:
       name: latest-nginx
       uri: nginx:latest
----
 # this section defines the actual resources deployed in each environment
 # you can use environment specific resources definitions here
 resources:
