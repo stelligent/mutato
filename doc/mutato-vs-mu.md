@@ -39,3 +39,15 @@ for enterprise applications.
 This is now possible due to the architecture of Mutato and the fact that it is
 built upon CDK and its constructs. Mutato uses CodeBuild internally, but it also
 offers ad-hoc support foundation for other CI systems.
+
+## Nunjucks and Powerful Templating
+
+[Nunjucks](https://mozilla.github.io/nunjucks/templating.html) is a powerful
+templating tool provided by Mozilla. Every `mutato.yml` is a valid Nunjucks file
+and this allows `mutato.yml` to include complex conditionals and
+environment-specific deploys in a single file. On top of that, Mutato extends
+Nunjucks and adds `env`, `cmd` and other helpers to allow users to customize
+their template based on their execution environment even more.
+
+The original Mu is very basic in terms of templating capabilities which would
+often result in managing multiple templates for different environments.
