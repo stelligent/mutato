@@ -121,7 +121,7 @@ export class App extends cdk.App {
       assert.ok(!config.opts.bundle.bucket && !config.opts.bundle.object);
       this._debug('running outside of CodeBuild, package up mutato');
       const mutatoBundle = new s3Assets.Asset(pipelineStack, 'mutato-asset', {
-        exclude: toGlob('.gitignore'),
+        exclude: _.concat('.git', 'mutato.yml', toGlob('.gitignore')),
         path: process.cwd(),
       });
       mutatoBundleBucket = mutatoBundle.bucket;
