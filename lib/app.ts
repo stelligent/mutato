@@ -3,6 +3,7 @@ import * as codeBuild from '@aws-cdk/aws-codebuild';
 import * as codePipeline from '@aws-cdk/aws-codepipeline';
 import * as codePipelineActions from '@aws-cdk/aws-codepipeline-actions';
 import * as s3Assets from '@aws-cdk/aws-s3-assets';
+import * as s3 from '@aws-cdk/aws-s3';
 import * as cdk from '@aws-cdk/core';
 import assert from 'assert';
 import debug from 'debug';
@@ -115,6 +116,7 @@ export class App extends cdk.App {
     // CodeBuild environment. in that case, we capture mutato's source into .zip
     // and send it to CodeBuild as a CDK asset. CodeBuild won't re-run this code
     // since "config.opts.asset" is defined for it.
+    let mutatoBundleBucket: s3.IBucket;
     if (!process.env.CODEBUILD_BUILD_ID) {
       assert.ok(!config.opts.bundle.bucket && !config.opts.bundle.object);
       this._debug('running outside of CodeBuild, package up mutato');
@@ -122,6 +124,7 @@ export class App extends cdk.App {
         exclude: toGlob('.gitignore'),
         path: process.cwd(),
       });
+      mutatoBundleBucket = mutatoBundle.bucket;
       _.set(environmentVariables, 'mutato_opts__bundle__bucket', {
         value: mutatoBundle.s3BucketName,
       });
@@ -132,6 +135,11 @@ export class App extends cdk.App {
       assert.ok(config.opts.bundle.bucket && config.opts.bundle.object);
       const bundle = `s3://${config.opts.bundle.bucket}/${config.opts.bundle.object}`;
       this._debug('running inside CodeBuild, using mutato bundle: %s', bundle);
+      mutatoBundleBucket = s3.Bucket.fromBucketName(
+        pipelineStack,
+        'mutato-bucket',
+        config.opts.bundle.bucket,
+      );
     }
 
     this._debug('creating a CodeBuild project that synthesizes myself');
@@ -166,6 +174,9 @@ export class App extends cdk.App {
         artifacts: { 'base-directory': 'dist', files: '**/*' },
       }),
     });
+
+    this._debug("granting permission to read from mutato bundle's bucket");
+    mutatoBundleBucket.grantRead(project);
 
     this._debug('creating an artifact to store synthesized self');
     const synthesizedApp = new codePipeline.Artifact();
