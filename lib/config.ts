@@ -1,7 +1,4 @@
-import {
-  BuildEnvironmentVariable,
-  BuildEnvironmentVariableType,
-} from '@aws-cdk/aws-codebuild';
+import { BuildEnvironmentVariable } from '@aws-cdk/aws-codebuild';
 import assert from 'assert';
 import cp from 'child_process';
 import debug from 'debug';
