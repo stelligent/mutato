@@ -9,13 +9,14 @@ import { config } from '../config';
 import { Container } from '../resources/container';
 import { ActionInterface, ActionPropsInterface } from './interface';
 
-const _debug = debug('mu:actions:CodeBuild');
+const _debug = debug('mutato:actions:CodeBuild');
 
 interface CodeBuildProps extends ActionPropsInterface {
   buildImage?: codeBuild.IBuildImage;
   container?: Container;
   pipeline: codePipeline.Pipeline;
   source: codePipeline.Artifact;
+  sourceAction: codePipelineActions.GitHubSourceAction;
   spec: object | string;
   privileged?: boolean;
 }
@@ -25,7 +26,10 @@ export class CodeBuild implements ActionInterface {
   private readonly _props: CodeBuildProps;
   public readonly name: string;
 
-  /** @hideconstructor */
+  /**
+   * @hideconstructor
+   * @param props codebuild parameters
+   */
   constructor(props: CodeBuildProps) {
     this._props = _.defaults(props, { order: 1, privileged: false });
     assert.ok(this._props.pipeline);
@@ -34,8 +38,13 @@ export class CodeBuild implements ActionInterface {
     this.name = this._props.name;
   }
 
-  /** creates a manual approval action in the pipeline */
-  public action(requester: string): codePipelineActions.CodeBuildAction {
+  /**
+   * creates a codebuild approval action in the pipeline
+   *
+   * @param requester a unique ID used to prevent action duplication
+   * @returns action construct to be added into a code pipeline
+   */
+  public action(requester = 'default'): codePipelineActions.CodeBuildAction {
     _debug('creating a code build action with props: %o', this._props);
     const project = new codeBuild.PipelineProject(
       cdk.Stack.of(this._props.pipeline),
@@ -53,8 +62,8 @@ export class CodeBuild implements ActionInterface {
                   this._props.container?.getImageUri(),
                 )
             : undefined,
-          environmentVariables: config.toBuildEnvironmentMap(),
           privileged: this._props.privileged,
+          environmentVariables: config.toBuildEnvironmentMap(),
         },
         buildSpec: _.isObject(this._props.spec)
           ? codeBuild.BuildSpec.fromObject(this._props.spec)
@@ -66,6 +75,11 @@ export class CodeBuild implements ActionInterface {
     const action = new codePipelineActions.CodeBuildAction({
       actionName: `${this.name}-${requester}`,
       input: this._props.source,
+      environmentVariables: {
+        mutato_opts__git__commit: {
+          value: this._props.sourceAction.variables.commitId,
+        },
+      },
       project,
     });
 

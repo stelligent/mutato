@@ -56,7 +56,7 @@ export class Service extends cdk.Construct {
   constructor(scope: cdk.Construct, id: string, props: ServiceProps) {
     super(scope, id);
 
-    this._debug = debug(`mu:constructs:service:${id}`);
+    this._debug = debug(`mutato:constructs:service:${id}`);
     this.props = _.defaults(props, {
       provider: ServiceProvider.Fargate,
       rate: 'rate(1 day)',

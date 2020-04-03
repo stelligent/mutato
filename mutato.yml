@@ -1,0 +1,25 @@
+containers:
+  - docker:
+      name: mutato
+      file: Dockerfile
+      uri: stelligent/mutato
+      events:
+        pre-build: npm-test
+        post-build: npm-deploy
+
+actions:
+  - docker:
+      name: npm-test
+      container: node:lts
+      cmd:
+        - npm install --allow-root --unsafe-perm
+        - USER=root npm test
+
+  - docker:
+      name: npm-deploy
+      container: node:lts
+      cmd:
+        - npm install --allow-root --unsafe-perm
+        - npm run build
+        - echo //registry.npmjs.org/:_authToken={{ env("NPM_TOKEN") }} > .npmrc
+        - npm publish --access=public

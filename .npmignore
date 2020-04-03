@@ -1,1 +1,13 @@
+.devcontainer
+.github
+.vscode
+cdk.out
+dist
+test
+.dockerignore
+.eslintignore
 .gitignore
+CONTRIBUTING.md
+Dockerfile
+jsdoc2md.json
+mutato.yml

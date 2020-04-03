@@ -33,11 +33,16 @@ export class Container extends cdk.Construct {
   private readonly _debug: debug.Debugger;
   private readonly _repositoryName: string;
 
-  /** @hideconstructor */
+  /**
+   * @hideconstructor
+   * @param scope CDK scope
+   * @param id CDK construct id
+   * @param props CDK construct parameters
+   */
   constructor(scope: cdk.Construct, id: string, props: ContainerProps) {
     super(scope, id);
 
-    this._debug = debug(`mu:constructs:container:${id}`);
+    this._debug = debug(`mutato:constructs:container:${id}`);
     this.props = _.defaults(props, {
       buildArgs: {},
       context: '.',
@@ -55,7 +60,7 @@ export class Container extends cdk.Construct {
     if (this.props.file && !this.props.uri) {
       this._debug('container is building for AWS ECR');
       const git = config.getGithubMetaData();
-      this._repositoryName = `mu/${git.identifier}`;
+      this._repositoryName = `mutato/${git.identifier}`;
       this.repo = new ecr.Repository(this, 'repository', {
         removalPolicy: cdk.RemovalPolicy.DESTROY,
         repositoryName: this._repositoryName,
@@ -72,17 +77,21 @@ export class Container extends cdk.Construct {
   }
 
   /**
-   * Get the container image's URI for use in ECS. Optionally caller can be used
-   * to get a portable URI independent of the stack building this container with
-   * a precondition that caller exists in the same AWS region and account.
    * @param caller optional construct in a different stack needing to access the
    * image URI without referencing the stack that is building the container.
+   * @returns Get the container image's URI for use in ECS. Optionally caller
+   * can be used to get a portable URI independent of the stack building this
+   * container with a precondition that caller exists in the same AWS region and
+   * account.
    */
   getImageUri(caller?: cdk.Construct): string {
-    if (caller) {
+    if (caller && this.repo) {
+      // little hack so we can use this container cross-stacks without circular
+      // errors thrown by CloudFormation. the build order is guaranteed so this
+      // is safe here.
       const stack = cdk.Stack.of(caller);
       const uri = `${stack.account}.dkr.ecr.${stack.region}.${stack.urlSuffix}/${this._repositoryName}`;
-      return this.repo ? uri : (this.props.uri as string);
+      return uri;
     } else return this.props.uri as string;
   }
 
@@ -106,26 +115,16 @@ export class Container extends cdk.Construct {
     ).trim();
     const f = this.props.file;
     const t = this.getImageUri();
-    // TODO: escape for shell args here to prevent shell attacks
-    return `docker build ${buildArgs} -t ${t} -f ${f} ${this.props.context}`;
+    const commitTag = `${t}:$mutato_opts__git__commit`;
+    const ctx = this.props.context;
+    return `docker build ${buildArgs} -t ${t} -t ${commitTag} -f ${f} ${ctx}`;
   }
 
   /** @returns shell command containing "docker push" */
   get pushCommand(): string {
     assert.ok(this.needsBuilding, 'container is not part of the pipeline');
-    return `docker push ${this.getImageUri()}`;
-  }
-
-  /** @returns shell command containing "docker run" */
-  runCommand(props: ContainerRunProps): string {
-    props = _.defaults(props, {
-      args: '-t --rm -v $(pwd):/project -w /project',
-    });
-    const env = _.reduce(
-      props.env,
-      (accumulate, value, key) => `${accumulate} -e ${key}="${value}"`,
-      '',
-    ).trim();
-    return `docker run ${props.args} ${env} ${this.getImageUri()} ${props.cmd}`;
+    const t = this.getImageUri();
+    const commitTag = `${t}:$mutato_opts__git__commit`;
+    return `docker push ${t} && docker push ${commitTag}`;
   }
 }

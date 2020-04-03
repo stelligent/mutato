@@ -5,7 +5,7 @@
 > to Mu. While there are many similarities between the two projects, currently
 > we are not planning to provide any compatibilities between the two.
 
-[Stelligent Mutato](https://github.com/stelligent/mu) is an open-source
+[Stelligent Mutato](https://github.com/stelligent/mutato) is an open-source
 framework for building containerized micro-services on the AWS ecosystem (e.g
 ECS or Fargate). Mutato is designed to leverage [AWS Cloud Development Kit
 (CDK)](https://docs.aws.amazon.com/cdk/latest/guide/home.html) constructs which
@@ -17,11 +17,9 @@ deploy and automate micro-service deployments.
 Create a simple _mutato.yml_ file in your Github repository:
 
 ```YAML
----
 environments:
   - acceptance
   - production
----
 resources:
   - service:
       provider: fargate
@@ -31,16 +29,17 @@ resources:
         maxAZs: {{ 1 if environment == "acceptance" else 3 }}
 ```
 
-Obtain a [GitHub OAuth
-token](https://help.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token).
+[Obtain](https://github.com/settings/tokens) a [GitHub Personal Access
+Token](https://help.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token).
 We assume you have this available in your `$PATH` under `$GITHUB_TOKEN`. Execute
 the following to deploy your microservice:
 
 ```bash
-$ echo $GITHUB_TOKEN > mutato.env
+$ cd /path/to/your/github/repo
+$ echo "GITHUB_TOKEN=$GITHUB_TOKEN" > mutato.env
 $ aws-vault exec <profile name> -- env | grep AWS_ >> mutato.env
-$ docker run --env-file mutato.env stelligent/mutato bootstrap
-$ docker run --env-file mutato.env -v /path/to/your/github/repo:/project stelligent/mutato deploy
+$ docker run -it --rm --env-file mutato.env -v `pwd`:/project stelligent/mutato bootstrap
+$ docker run -it --rm --env-file mutato.env -v `pwd`:/project stelligent/mutato deploy
 ```
 
 This gives you a load balanced NGINX server in two separate environments and the
@@ -48,14 +47,19 @@ _acceptance_ environment has its VPC AZ capacity set to 1 to reduce costs.
 
 ## Where To Head Next
 
+You want to familiarize yourself with the [concepts](mutato-concepts.md) first.
+
+After that, you need to know the [workflow](mutato-workflow.md) of a Mutato
+enabled project. The following documentation comes next:
+
 - To learn more about what you can write in _mutato.yml_, head over to its
-  [reference schema](mutato-yaml) page.
+  [reference schema](mutato-yaml.md) page.
 - To learn more about what you can do with the Mutato Docker container, head
-  over [to its page](mutato-docker).
+  over [to its page](mutato-docker.md).
 - To learn more about extensibility of Mutato, read [its extensibility
-  documentation](mutato-cdk).
+  documentation](mutato-cdk.md).
 - If you are looking for the auto generated low level CDK api documentation, [go
-  to API](api)
+  to API](api.md)
 
 ## AWS Environment
 

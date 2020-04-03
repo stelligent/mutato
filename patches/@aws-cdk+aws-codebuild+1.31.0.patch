@@ -1,0 +1,13 @@
+diff --git a/node_modules/@aws-cdk/aws-codebuild/lib/project.js b/node_modules/@aws-cdk/aws-codebuild/lib/project.js
+index 724276a..79c3b8f 100644
+--- a/node_modules/@aws-cdk/aws-codebuild/lib/project.js
++++ b/node_modules/@aws-cdk/aws-codebuild/lib/project.js
+@@ -917,7 +917,7 @@ var BuildEnvironmentVariableType;
+     /**
+      * An environment variable in plaintext format.
+      */
+-    BuildEnvironmentVariableType["PLAINTEXT"] = "PLAINTEXT";
++    //BuildEnvironmentVariableType["PLAINTEXT"] = "PLAINTEXT";
+     /**
+      * An environment variable stored in Systems Manager Parameter Store.
+      */

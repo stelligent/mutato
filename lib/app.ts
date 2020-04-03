@@ -2,6 +2,8 @@ import * as cicd from '@aws-cdk/app-delivery';
 import * as codeBuild from '@aws-cdk/aws-codebuild';
 import * as codePipeline from '@aws-cdk/aws-codepipeline';
 import * as codePipelineActions from '@aws-cdk/aws-codepipeline-actions';
+import * as s3Assets from '@aws-cdk/aws-s3-assets';
+import * as s3 from '@aws-cdk/aws-s3';
 import * as cdk from '@aws-cdk/core';
 import assert from 'assert';
 import debug from 'debug';
@@ -10,66 +12,72 @@ import _ from 'lodash';
 import path from 'path';
 import * as Actions from './actions';
 import { config } from './config';
-import { MuSpec, Parser } from './parser';
+import { MutatoSpec, Parser } from './parser';
 import { Container } from './resources/container';
 import { Network } from './resources/network';
 import { Service } from './resources/service';
 import { Storage } from './resources/storage';
 import { Database } from './resources/database';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const toGlob = require('gitignore-globs');
 
 /**
- * This class holds together a Mu Pipeline (a Stack) and Mu Resources (a Stack
- * deployed through the Mu Pipeline stack). This is the entry point to all Mu-
- * powered microservice infrastructures.
+ * This class holds together a Mutato Pipeline (a Stack) and Mutato Resources (a
+ * Stack deployed through the Mutato Pipeline stack). This is the entry point to
+ * all Mutato powered microservice infrastructures.
  */
 export class App extends cdk.App {
   private readonly _parser = new Parser();
-  private readonly _debug = debug('mu:App');
-  private static MU_YML = path.resolve(config.opts.git.local, 'mu.yml');
+  private readonly _debug = debug('mutato:App');
+  private static MUTATO_YML = path.resolve(config.opts.git.local, 'mutato.yml');
 
   /**
-   * initializes this Mu App from a valid Mu YAML file
+   * initializes this Mutato App from a valid Mutato YAML file
    *
-   * @param file Mu YAML file path. By default it looks under your
-   * current working directory for mu.yml
+   * @param file Mutato YAML file path. By default it looks under your
+   * current working directory for mutato.yml
    */
-  public async synthesizeFromFile(file = App.MU_YML): Promise<void> {
-    this._debug('synthesizing Mu app from file: %s', file);
-    const muYamlString = await fs.promises.readFile(file, { encoding: 'utf8' });
-    this.synthesizeFromString(muYamlString);
+  public async synthesizeFromFile(file = App.MUTATO_YML): Promise<void> {
+    this._debug('synthesizing Mutato app from file: %s', file);
+    const yamlString = await fs.promises.readFile(file, { encoding: 'utf8' });
+    this.synthesizeFromString(yamlString);
   }
 
   /**
-   * initializes this Mu stack from a valid Mu YAML string
+   * initializes this Mutato stack from a valid Mutato YAML string
    *
-   * @param string Mu YAML string
+   * @param string Mutato YAML string
    */
   public async synthesizeFromString(string: string): Promise<void> {
-    this._debug('synthesizing Mu app from string: %s', string);
-    const muYmlObject = this._parser.parse(string);
-    await this.synthesizeFromObject(muYmlObject as MuSpec);
+    this._debug('synthesizing Mutato app from string: %s', string);
+    const ymlObject = this._parser.parse(string);
+    await this.synthesizeFromObject(ymlObject as MutatoSpec);
   }
 
   /**
-   * initializes this Mu stack from a valid Mu YAML object (converted to JSON)
+   * initializes this Mutato stack from a valid Mutato YAML object (converted to JSON)
    *
-   * @param spec a valid Mu YAML object
+   * @param spec a valid Mutato YAML object
    */
-  public async synthesizeFromObject(spec: MuSpec): Promise<void> {
-    this._debug('synthesizing Mu app from object: %o', spec);
+  public async synthesizeFromObject(spec: MutatoSpec): Promise<void> {
+    this._debug('synthesizing Mutato app from object: %o', spec);
     assert.ok(_.isObject(spec));
 
     const git = config.getGithubMetaData();
     this._debug('git meta data extracted: %o', git);
 
-    this._debug('creating a stack (Mu Pipeline)');
-    const pipelineStack = new cdk.Stack(this, 'MuPipeline', {
-      description: 'pipeline that manages deploy of mu.yml resources',
-      stackName: `Mu-Pipeline-${git.identifier}`,
+    const __ = function (name: string): string {
+      return `${name}-${git.identifier}`;
+    };
+
+    this._debug('creating a stack (Mutato Pipeline)');
+    const pipelineStack = new cdk.Stack(this, 'MutatoPipeline', {
+      description: 'pipeline that manages deploy of mutato.yml resources',
+      stackName: __('Mutato-Pipeline'),
     });
 
-    this._debug('creating a CodePipeline to manage Mu resources');
-    const pipeline = new codePipeline.Pipeline(pipelineStack, 'pipeline', {
+    this._debug('creating a CodePipeline to manage Mutato resources');
+    const pipeline = new codePipeline.Pipeline(pipelineStack, __('pipeline'), {
       restartExecutionOnUpdate: true,
     });
 
@@ -87,7 +95,7 @@ export class App extends cdk.App {
     });
     this._debug('adding Github action to the pipeline');
     pipeline.addStage({
-      stageName: 'Mu-Source',
+      stageName: 'Mutato-Source',
       actions: [source],
     });
 
@@ -96,20 +104,47 @@ export class App extends cdk.App {
       // propagate this machine's configuration into CodeBuild since Git
       // metadata and other utilities are unavailable in that environment
       ...config.toBuildEnvironmentMap(),
-      USER: {
-        type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-        value: 'root',
-      },
-      DEBUG: {
-        type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-        value: 'mu*',
-      },
-      DEBUG_COLORS: {
-        type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-        value: '0',
-      },
+      ...config.toBuildEnvironmentMap(spec.environmentVariables),
+      USER: { value: 'root' },
+      DEBUG: { value: 'mutato*' },
+      DEBUG_COLORS: { value: '0' },
     };
     this._debug('environment of CodeBuild: %o', environmentVariables);
+
+    // explanation on WTF is going on here: if "bundle" isn't configured through
+    // environment variables, that means user is executing mutato outside of the
+    // CodeBuild environment. in that case, we capture mutato's source into .zip
+    // and send it to CodeBuild as a CDK asset. CodeBuild won't re-run this code
+    // since "config.opts.bundle" is defined for it.
+    let mutatoBundleBucket: s3.IBucket;
+    if (!process.env.CODEBUILD_BUILD_ID) {
+      assert.ok(!config.opts.bundle.bucket && !config.opts.bundle.object);
+      this._debug('running outside of CodeBuild, package up mutato');
+      const mutatoBundle = new s3Assets.Asset(pipelineStack, 'mutato-asset', {
+        exclude: _.concat('.git', 'mutato.yml', toGlob('.gitignore')),
+        path: process.cwd(),
+      });
+      mutatoBundleBucket = mutatoBundle.bucket;
+      _.set(environmentVariables, 'mutato_opts__bundle__bucket', {
+        value: mutatoBundle.s3BucketName,
+      });
+      _.set(environmentVariables, 'mutato_opts__bundle__object', {
+        value: mutatoBundle.s3ObjectKey,
+      });
+    } else {
+      // the first time user deploys through their terminal, this causes a loop
+      // from Synth -> Update -> Synth again because the underlying CFN template
+      // is changing from using a CDN param (CDK asset) to an inline bucket. but
+      // the result is the same, therefore it goes out of the loop
+      assert.ok(config.opts.bundle.bucket && config.opts.bundle.object);
+      const bundle = `s3://${config.opts.bundle.bucket}/${config.opts.bundle.object}`;
+      this._debug('running inside CodeBuild, using mutato bundle: %s', bundle);
+      mutatoBundleBucket = s3.Bucket.fromBucketName(
+        pipelineStack,
+        'mutato-bucket',
+        config.opts.bundle.bucket,
+      );
+    }
 
     this._debug('creating a CodeBuild project that synthesizes myself');
     const project = new codeBuild.PipelineProject(pipelineStack, 'build', {
@@ -120,12 +155,34 @@ export class App extends cdk.App {
       buildSpec: codeBuild.BuildSpec.fromObject({
         version: 0.2,
         phases: {
-          install: { commands: ['npm install'] },
-          build: { commands: ['npm run synth'] },
+          build: {
+            commands: [
+              // make sure mutato knows where user's repo is mounted
+              'export mutato_opts__git__local=`pwd`',
+              // install AWS CLI
+              'mkdir -p /aws-cli && cd /aws-cli',
+              'curl "s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"',
+              'unzip awscli-bundle.zip',
+              './awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws',
+              // create the mutato bundle address
+              `export MUTATO_BUNDLE="s3://$mutato_opts__bundle__bucket/$mutato_opts__bundle__object"`,
+              // pull down mutato's bundle used to create this pipeline
+              'mkdir -p /mutato && cd /mutato',
+              'aws s3 cp "$MUTATO_BUNDLE" .',
+              'unzip $(basename "$MUTATO_BUNDLE")',
+              // do cdk synth, mutato knows about user's repo over env vars
+              'npm install && npm run synth',
+              // show the user what changes they just pushed
+              'npm run --silent cdk -- diff || true',
+            ],
+          },
         },
         artifacts: { 'base-directory': 'dist', files: '**/*' },
       }),
     });
+
+    this._debug("granting permission to read from mutato bundle's bucket");
+    mutatoBundleBucket.grantRead(project);
 
     this._debug('creating an artifact to store synthesized self');
     const synthesizedApp = new codePipeline.Artifact();
@@ -135,17 +192,20 @@ export class App extends cdk.App {
       project,
       input: githubSource,
       outputs: [synthesizedApp],
+      environmentVariables: {
+        mutato_opts__git__commit: { value: source.variables.commitId },
+      },
     });
 
     this._debug('adding self build action to the pipeline');
     pipeline.addStage({
-      stageName: 'Mu-Synthesize',
+      stageName: 'Mutato-Synthesize',
       actions: [buildAction],
     });
 
     this._debug('adding a self update stage');
     pipeline.addStage({
-      stageName: 'Mu-Update',
+      stageName: 'Mutato-Update',
       actions: [
         new cicd.PipelineDeployStackAction({
           stack: pipelineStack,
@@ -192,6 +252,7 @@ export class App extends cdk.App {
             ...prop,
             pipeline,
             source: githubSource,
+            sourceAction: source,
             container: queryContainer(prop.container, name),
           });
         case 'codebuild':
@@ -200,6 +261,7 @@ export class App extends cdk.App {
             ...prop,
             pipeline,
             source: githubSource,
+            sourceAction: source,
             container: _.isString(prop.container)
               ? queryContainer(prop.container, name)
               : undefined,
@@ -215,7 +277,9 @@ export class App extends cdk.App {
     const pipelineContainers = containers.filter((c) => c.needsBuilding);
     if (pipelineContainers.length > 0) {
       this._debug('we are building containers, adding its stages');
-      const containersStage = pipeline.addStage({ stageName: 'Mu-Containers' });
+      const containersStage = pipeline.addStage({
+        stageName: 'Mutato-Containers',
+      });
 
       const havePreBuild = !!containerSpecs
         .map((c) => _.head(_.values(c)))
@@ -225,7 +289,10 @@ export class App extends cdk.App {
       let containerPreBuildStage: codePipeline.IStage;
       if (havePreBuild) {
         containerPreBuildStage = pipeline.addStage({
-          stageName: 'Mu-Containers-Pre-Build',
+          stageName: 'Mutato-Containers-Pre-Build',
+          placement: {
+            rightBefore: containersStage,
+          },
         });
       }
 
@@ -237,7 +304,10 @@ export class App extends cdk.App {
       let containerPostBuildStage: codePipeline.IStage;
       if (havePostBuild) {
         containerPostBuildStage = pipeline.addStage({
-          stageName: 'Mu-Containers-Post-Build',
+          stageName: 'Mutato-Containers-Post-Build',
+          placement: {
+            justAfter: containersStage,
+          },
         });
       }
 
@@ -272,6 +342,7 @@ export class App extends cdk.App {
           new Actions.DockerBuild({
             name: `build-${container.node.id}`,
             source: githubSource,
+            sourceAction: source,
             container,
             pipeline,
           }).action(container.node.id),
@@ -297,21 +368,24 @@ export class App extends cdk.App {
     }
 
     Array.from(spec.environments.keys()).forEach((envName) => {
+      const resources = spec.environments.get(envName);
+      if (resources?.length === 1) {
+        this._debug('environment is empty, skipping it: %s', envName);
+        return;
+      }
       const queryConstruct = (type: string): object[] =>
         _.filter(
-          (spec.environments
-            .get(envName)
-            ?.filter((c) => _.head(_.keys(c)) === type) as object[]).map((c) =>
-            _.get(c, type),
-          ),
+          (resources?.filter(
+            (c) => _.head(_.keys(c)) === type,
+          ) as object[]).map((c) => _.get(c, type)),
         );
       const environment = _.head(queryConstruct('environment'));
       this._debug('creating environment: %s / %o', envName, environment);
 
-      this._debug('creating a stack (Mu Resources)');
-      const envStack = new cdk.Stack(this, `MuResources-${envName}`, {
+      this._debug('creating a stack (Mutato Resources)');
+      const envStack = new cdk.Stack(this, `MutatoResources-${envName}`, {
         description: `application resources for environment: ${envName}`,
-        stackName: `Mu-App-${envName}-${git.identifier}`,
+        stackName: __(`Mutato-App-${envName}`),
       });
 
       const networkSpecs = queryConstruct('network');
@@ -345,6 +419,18 @@ export class App extends cdk.App {
         databases.forEach((database) => database.grantAccess(service));
       });
 
+      this._debug('adding environment deploy stage');
+      const deployStage = pipeline.addStage({
+        stageName: `Mutato-${envName}-Deploy`,
+        actions: [
+          new cicd.PipelineDeployStackAction({
+            stack: envStack,
+            input: synthesizedApp,
+            adminPermissions: true,
+          }),
+        ],
+      });
+
       const havePreDeploy = !!_.get(environment, 'events["pre-deploy"]');
       if (havePreDeploy) {
         const preDeployEventSpecs = _.get(
@@ -356,7 +442,8 @@ export class App extends cdk.App {
             ? [preDeployEventSpecs]
             : preDeployEventSpecs) || [];
         pipeline.addStage({
-          stageName: `Mu-${envName}-Pre-Deploy`,
+          stageName: `Mutato-${envName}-Pre-Deploy`,
+          placement: { rightBefore: deployStage },
           actions: preDeployEvents.map(
             (ev) =>
               actions
@@ -365,18 +452,6 @@ export class App extends cdk.App {
           ),
         });
       }
-
-      this._debug('adding environment deploy stage');
-      pipeline.addStage({
-        stageName: `Mu-${envName}-Deploy`,
-        actions: [
-          new cicd.PipelineDeployStackAction({
-            stack: envStack,
-            input: synthesizedApp,
-            adminPermissions: true,
-          }),
-        ],
-      });
 
       const havePostDeploy = !!_.get(environment, 'events["post-deploy"]');
       if (havePostDeploy) {
@@ -389,7 +464,8 @@ export class App extends cdk.App {
             ? [postDeployEventSpecs]
             : postDeployEventSpecs) || [];
         pipeline.addStage({
-          stageName: `Mu-${envName}-Post-Deploy`,
+          stageName: `Mutato-${envName}-Post-Deploy`,
+          placement: { justAfter: deployStage },
           actions: postDeployEvents.map(
             (ev) =>
               actions

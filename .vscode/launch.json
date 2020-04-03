@@ -14,12 +14,12 @@
       "type": "node",
       "request": "launch",
       "name": "Debug EntryPoint",
-      "program": "${workspaceFolder}/bin/mu.ts",
+      "program": "${workspaceFolder}/bin/mutato.ts",
       "preLaunchTask": "npm: build",
       "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "skipFiles": ["<node_internals>/**"],
       "cwd": "${workspaceFolder}",
-      "env": { "DEBUG": "mu*" },
+      "env": { "DEBUG": "mutato*" },
       "console": "integratedTerminal"
     }
   ]

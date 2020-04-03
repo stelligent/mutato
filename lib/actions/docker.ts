@@ -1,19 +1,24 @@
 import * as codeBuild from '@aws-cdk/aws-codebuild';
 import * as codePipeline from '@aws-cdk/aws-codepipeline';
-import { config } from '../config';
+import * as codePipelineActions from '@aws-cdk/aws-codepipeline-actions';
 import { Container } from '../resources/container';
 import { CodeBuild } from './codebuild';
 import { ActionPropsInterface } from './interface';
+import _ from 'lodash';
 
 interface DockerBuildProps extends ActionPropsInterface {
   container: Container;
   pipeline: codePipeline.Pipeline;
   source: codePipeline.Artifact;
+  sourceAction: codePipelineActions.GitHubSourceAction;
 }
 
 /** "docker build" convenience action */
 export class DockerBuild extends CodeBuild {
-  /** @hideconstructor */
+  /**
+   * @hideconstructor
+   * @param props build parameters
+   */
   constructor(props: DockerBuildProps) {
     super({
       ...props,
@@ -36,34 +41,25 @@ interface DockerRunProps extends ActionPropsInterface {
   container: Container;
   pipeline: codePipeline.Pipeline;
   source: codePipeline.Artifact;
+  sourceAction: codePipelineActions.GitHubSourceAction;
+  cmd?: string | string[];
   privileged?: boolean;
-  args?: string;
-  env?: { [key: string]: string };
-  cmd: string;
 }
 
 /** "docker run" convenience action */
 export class DockerRun extends CodeBuild {
-  /** @hideconstructor */
+  /**
+   * @hideconstructor
+   * @param props run parameters
+   */
   constructor(props: DockerRunProps) {
     super({
       ...props,
       spec: {
         version: 0.2,
         phases: {
-          install: { 'runtime-versions': { docker: 18 } },
-          pre_build: { commands: [props.container.loginCommand] },
           build: {
-            commands: [
-              props.container.runCommand({
-                cmd: props.cmd,
-                args: props.args,
-                env: {
-                  ...config.toStringEnvironmentMap(),
-                  ...props.env,
-                },
-              }),
-            ],
+            commands: _.isString(props.cmd) ? [props.cmd] : props.cmd,
           },
         },
       },

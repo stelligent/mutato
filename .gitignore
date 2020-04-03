@@ -181,3 +181,5 @@ temp/
 # TSC artifacts
 out
 doc/api.md
+!bin/*.ts
+!bin/*.js

@@ -14,7 +14,7 @@ describe('Parser Tests', () => {
 
   it('should make a development environment by default', () => {
     const parser = new Parser();
-    const parsed = parser.parse('---');
+    const parsed = parser.parse('');
     chai.assert.isTrue(parsed.environments.size === 1);
     chai.assert.isTrue(parsed.environments.has('development'));
     const development = parsed.environments.get('development');
@@ -25,7 +25,7 @@ describe('Parser Tests', () => {
 
   it('should be able to parse environments', () => {
     const parser = new Parser();
-    const parsed = parser.parse(`---
+    const parsed = parser.parse(`
     environments:
       - develop:
           events:
@@ -59,7 +59,7 @@ describe('Parser Tests', () => {
 
   it('should support env() and cmd() in environments', () => {
     const parser = new Parser();
-    const parsed = parser.parse(`---
+    const parsed = parser.parse(`
     environments:
       - acceptance:
           user: {{ env("USER") }}
@@ -83,21 +83,17 @@ describe('Parser Tests', () => {
   it('should support environment specific configuration', () => {
     const parser = new Parser();
     const parsed = parser.parse(`
----
     environments:
       - acceptance
       - production
----
     containers:
       - nginx:
           uri: nginx:latest
----
     actions:
       - action-name-1:
           foo: bar
       - action-name-2:
           test: val
----
     resources:
       - service:
           name: web-server-{{ environment }}

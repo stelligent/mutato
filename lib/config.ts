@@ -1,7 +1,4 @@
-import {
-  BuildEnvironmentVariable,
-  BuildEnvironmentVariableType,
-} from '@aws-cdk/aws-codebuild';
+import { BuildEnvironmentVariable } from '@aws-cdk/aws-codebuild';
 import assert from 'assert';
 import cp from 'child_process';
 import debug from 'debug';
@@ -11,7 +8,7 @@ import rc from 'rc';
 import traverse from 'traverse';
 import parse = require('parse-strings-in-object');
 
-const log = debug('mu:config');
+const log = debug('mutato:config');
 
 /**
  * @param name "rc" namespace
@@ -25,18 +22,22 @@ function rcTyped<T>(name: string, defaults: T): T {
 }
 
 // args passed to cp.execSync down when we extract defaults from environment
-const gitC = _.get(process.env, 'mu_opts__git__local', process.cwd());
+const gitC = _.get(process.env, 'mutato_opts__git__local', process.cwd());
 const gitRemoteCmd = `git -C "${gitC}" config --get remote.origin.url || true`;
 const gitBranchCmd = `git -C "${gitC}" rev-parse --abbrev-ref HEAD || true`;
+const gitCommitCmd = `git -C "${gitC}" rev-parse HEAD || true`;
 
 type StringEnvironmentVariableMap = { [key: string]: string };
 type BuildEnvironmentVariableMap = { [key: string]: BuildEnvironmentVariable };
 
 log('extracting configuration');
-export const config = rcTyped('mu', {
+export const config = rcTyped('mutato', {
   opts: {
     git: {
       local: gitC,
+      commit: cp
+        .execSync(gitCommitCmd, { encoding: 'utf8', timeout: 1000 })
+        .trim(),
       remote: cp
         .execSync(gitRemoteCmd, { encoding: 'utf8', timeout: 1000 })
         .trim(),
@@ -51,6 +52,10 @@ export const config = rcTyped('mu', {
     },
     preprocessor: {
       timeout: '10s',
+    },
+    bundle: {
+      bucket: '',
+      object: '',
     },
   },
   getGithubMetaData() {
@@ -74,22 +79,22 @@ export const config = rcTyped('mu', {
   toStringEnvironmentMap() {
     return traverse(this).reduce(function (acc, x) {
       if (this.isLeaf && this.key !== '_' && !_.isFunction(x))
-        acc[`mu_${this.path.join('__')}`] = `${x}`;
-      return acc;
+        acc[`mutato_${this.path.join('__')}`] = `${x}`;
+      return _.omit(acc, [
+        'mutato_opts__git__local',
+        'mutato_opts__git__commit',
+      ]);
     }, {}) as StringEnvironmentVariableMap;
   },
-  toBuildEnvironmentMap() {
+  toBuildEnvironmentMap(variables?: StringEnvironmentVariableMap) {
     return _.transform(
-      this.toStringEnvironmentMap(),
+      variables ? variables : this.toStringEnvironmentMap(),
       (result: BuildEnvironmentVariableMap, value, key) => {
-        result[key] = {
-          type: BuildEnvironmentVariableType.PLAINTEXT,
-          value,
-        };
+        result[key] = { value };
       },
       {},
     );
   },
 });
 
-log('Mu configuration: %o', config.toStringEnvironmentMap());
+log('Mutato configuration: %o', config.toStringEnvironmentMap());

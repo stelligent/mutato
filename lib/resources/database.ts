@@ -41,7 +41,7 @@ export class Database extends cdk.Construct {
   constructor(scope: cdk.Construct, id: string, props: DatabaseProps) {
     super(scope, id);
 
-    this._debug = debug(`mu:constructs:database:${id}`);
+    this._debug = debug(`mutato:constructs:database:${id}`);
     this.props = _.defaults(props, {
       provider: DatabaseProvider.Dynamo,
     });

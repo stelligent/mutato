@@ -31,7 +31,7 @@ export class Storage extends cdk.Construct {
   constructor(scope: cdk.Construct, id: string, props: StorageProps) {
     super(scope, id);
 
-    this._debug = debug(`mu:constructs:storage:${id}`);
+    this._debug = debug(`tato:constructs:storage:${id}`);
     this.props = _.defaults(props, {
       provider: StorageProvider.S3,
     });
