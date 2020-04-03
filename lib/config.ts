@@ -56,6 +56,10 @@ export const config = rcTyped('mutato', {
     preprocessor: {
       timeout: '10s',
     },
+    bundle: {
+      bucket: '',
+      object: '',
+    },
   },
   getGithubMetaData() {
     const meta = parseGithubUrl(this.opts.git.remote);
