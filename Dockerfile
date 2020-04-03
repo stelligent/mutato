@@ -1,7 +1,7 @@
 FROM node:lts
 
-ADD . /mu
-WORKDIR /mu
+ADD . /mutato
+WORKDIR /mutato
 
 ENV DEBUG=mutato*
 ENV DEBUG_COLORS=0
