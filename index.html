@@ -24,6 +24,9 @@
           style: 'flat'
         }
       };
+      // on GH pages, we need to define a base path to load css and images
+      if (location.hostname !== "localhost" && location.hostname !== "127.0.0.1") 
+        window.$docsify.basePath = 'https://stelligent.github.io/mutato/';
     </script>
     <script src="//unpkg.com/docsify/lib/docsify.min.js"></script>
     <!-- Add a simple Click to copy button to all preformatted code blocks -->
