@@ -111,11 +111,11 @@ export class App extends cdk.App {
     };
     this._debug('environment of CodeBuild: %o', environmentVariables);
 
-    // explanation on WTF is going on here: if "asset" is not configured through
+    // explanation on WTF is going on here: if "bundle" isn't configured through
     // environment variables, that means user is executing mutato outside of the
     // CodeBuild environment. in that case, we capture mutato's source into .zip
     // and send it to CodeBuild as a CDK asset. CodeBuild won't re-run this code
-    // since "config.opts.asset" is defined for it.
+    // since "config.opts.bundle" is defined for it.
     let mutatoBundleBucket: s3.IBucket;
     if (!process.env.CODEBUILD_BUILD_ID) {
       assert.ok(!config.opts.bundle.bucket && !config.opts.bundle.object);
@@ -132,6 +132,10 @@ export class App extends cdk.App {
         value: mutatoBundle.s3ObjectKey,
       });
     } else {
+      // the first time user deploys through their terminal, this causes a loop
+      // from Synth -> Update -> Synth again because the underlying CFN template
+      // is changing from using a CDN param (CDK asset) to an inline bucket. but
+      // the result is the same, therefore it goes out of the loop
       assert.ok(config.opts.bundle.bucket && config.opts.bundle.object);
       const bundle = `s3://${config.opts.bundle.bucket}/${config.opts.bundle.object}`;
       this._debug('running inside CodeBuild, using mutato bundle: %s', bundle);
