@@ -56,3 +56,24 @@ those changes deploy.
 > [!NOTE] If you make changes to environment variables used in your `mutato.yml`
 or the core Mutato codebase itself, you have to deploy manually from your
 terminal again.
+
+## destroy
+
+> [!NOTE] It is in our development roadmap to automate this procedure.
+
+Currently deleting stacks is a little bugged (from the CDK side). Deleting must
+be done in this order:
+
+1. first delete the `Mutato-Pipeline-<github identifer>` stack
+2. iterate and delete stacks of your deployed environments
+
+In case any of the stacks throw errors while deleting (very likely), after throw
+you have to:
+
+1. open up all the IAM roles remaining
+2. associate the "Administrator Access" inline policy to them
+3. delete the stack again
+4. it gives you an error again, this time only roles are remaining
+5. delete the stack again while retaining all the roles
+6. stack should delete successfully at this point
+7. manually delete the roles in the IAM console
