@@ -172,11 +172,11 @@ export class App extends cdk.App {
               'unzip awscli-bundle.zip',
               './awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws',
               // create the mutato bundle address
-              `export MUTATO_BUNDLE="s3://$mutato_opts__bundle__bucket/$mutato_opts__bundle__object"`,
+              `export BUNDLE="s3://$mutato_opts__bundle__bucket/$mutato_opts__bundle__object"`,
               // pull down mutato's bundle used to create this pipeline
               'mkdir -p /mutato && cd /mutato',
-              'aws s3 cp "$MUTATO_BUNDLE" .',
-              'unzip $(basename "$MUTATO_BUNDLE")',
+              'aws s3 cp "$BUNDLE" .',
+              'unzip $(basename "$BUNDLE")',
               // prepare the environment
               'chmod +x .env && . ./.env && rm .env',
               // do cdk synth, mutato knows about user's repo over env vars
