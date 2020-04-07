@@ -10,6 +10,7 @@ import _ from 'lodash';
 import { Container } from './container';
 import { Network } from './network';
 import { Storage } from './storage';
+import { config } from '../config';
 
 enum ServiceProvider {
   Fargate = 'fargate',
@@ -68,6 +69,8 @@ export class Service extends cdk.Construct {
     assert.ok(_.isObject(this.props.network));
 
     const imageUri = this.props.container.getImageUri(this);
+    // a unique container to force an ECS cluster update to pull down changes
+    const containerName = `container-${config.opts.git.commit}-${Date.now()}`;
     const ecrPullPolicy = new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
       actions: [
@@ -89,6 +92,8 @@ export class Service extends cdk.Construct {
             cluster: this.props.network.cluster,
             taskImageOptions: {
               image: ecs.ContainerImage.fromRegistry(imageUri),
+              environment: { MUTATO_CONTAINER_NAME: containerName },
+              containerName,
             },
             ...(this.props
               .config as ecsPatterns.ApplicationLoadBalancedFargateServiceProps),
@@ -103,6 +108,8 @@ export class Service extends cdk.Construct {
             cluster: this.props.network.cluster,
             taskImageOptions: {
               image: ecs.ContainerImage.fromRegistry(imageUri),
+              environment: { MUTATO_CONTAINER_NAME: containerName },
+              containerName,
             },
             ...(this.props
               .config as ecsPatterns.ApplicationLoadBalancedEc2ServiceProps),
@@ -118,6 +125,7 @@ export class Service extends cdk.Construct {
             cluster: this.props.network.cluster,
             scheduledFargateTaskImageOptions: {
               image: ecs.ContainerImage.fromRegistry(imageUri),
+              environment: { MUTATO_CONTAINER_NAME: containerName },
             },
             schedule: appAutoScaling.Schedule.expression(
               this.props.rate as string,
@@ -132,6 +140,7 @@ export class Service extends cdk.Construct {
           cluster: this.props.network.cluster,
           scheduledEc2TaskImageOptions: {
             image: ecs.ContainerImage.fromRegistry(imageUri),
+            environment: { MUTATO_CONTAINER_NAME: containerName },
           },
           schedule: appAutoScaling.Schedule.expression(
             this.props.rate as string,
@@ -147,6 +156,7 @@ export class Service extends cdk.Construct {
           'FargateQueue',
           {
             image: ecs.ContainerImage.fromRegistry(imageUri),
+            environment: { MUTATO_CONTAINER_NAME: containerName },
             queue: this.props.storage?.resource as sqs.Queue,
             cluster: this.props.network.cluster,
             ...(this.props
@@ -162,6 +172,7 @@ export class Service extends cdk.Construct {
           'ClassicQueue',
           {
             image: ecs.ContainerImage.fromRegistry(imageUri),
+            environment: { MUTATO_CONTAINER_NAME: containerName },
             queue: this.props.storage?.resource as sqs.Queue,
             cluster: this.props.network.cluster,
             ...(this.props
