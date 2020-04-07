@@ -163,6 +163,7 @@ export class App extends cdk.App {
         phases: {
           build: {
             commands: [
+              '/bin/bash',
               // make sure mutato knows where user's repo is mounted
               'export mutato_opts__git__local=`pwd`',
               // install AWS CLI
