@@ -178,7 +178,7 @@ export class App extends cdk.App {
               'aws s3 cp "$MUTATO_BUNDLE" .',
               'unzip $(basename "$MUTATO_BUNDLE")',
               // prepare the environment
-              'chmod +x .env && . .env && rm .env',
+              'chmod +x .env && . ./.env && rm .env',
               // do cdk synth, mutato knows about user's repo over env vars
               'npm install && npm run synth',
               // show the user what changes they just pushed
