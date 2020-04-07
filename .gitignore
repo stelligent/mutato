@@ -183,3 +183,4 @@ out
 doc/api.md
 !bin/*.ts
 !bin/*.js
+mutato.env
