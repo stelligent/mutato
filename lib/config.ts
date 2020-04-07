@@ -30,7 +30,7 @@ const gitCommitCmd = `git -C "${gitC}" rev-parse HEAD || true`;
 type StringEnvironmentVariableMap = { [key: string]: string };
 type BuildEnvironmentVariableMap = { [key: string]: BuildEnvironmentVariable };
 
-log('extracting configuration');
+log('extracting configuration from environment: %o', process.env);
 export const config = rcTyped('mutato', {
   opts: {
     git: {
