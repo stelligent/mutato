@@ -83,6 +83,8 @@ export const config = rcTyped('mutato', {
       return _.omit(acc, [
         'mutato_opts__git__local',
         'mutato_opts__git__commit',
+        'mutato_opts__bundle__bucket',
+        'mutato_opts__bundle__object',
       ]);
     }, {}) as StringEnvironmentVariableMap;
   },
@@ -97,4 +99,4 @@ export const config = rcTyped('mutato', {
   },
 });
 
-log('Mutato configuration: %o', config.toStringEnvironmentMap());
+log('Mutato configuration: %o', config);
