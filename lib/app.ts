@@ -83,9 +83,10 @@ export class App extends cdk.App {
     });
 
     this._debug('creating an artifact to store Github source');
-    const githubSource = new codePipeline.Artifact();
+    const githubSource = new codePipeline.Artifact('S');
     this._debug('creating an action that pulls source from Github');
     const source = new codePipelineActions.GitHubSourceAction({
+      variablesNamespace: 'GH',
       actionName: 'GitHub',
       output: githubSource,
       owner: git.owner,
