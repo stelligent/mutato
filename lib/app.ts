@@ -5,6 +5,7 @@ import * as codePipelineActions from '@aws-cdk/aws-codepipeline-actions';
 import * as s3Assets from '@aws-cdk/aws-s3-assets';
 import * as s3 from '@aws-cdk/aws-s3';
 import * as cdk from '@aws-cdk/core';
+import * as iam from '@aws-cdk/aws-iam';
 import assert from 'assert';
 import debug from 'debug';
 import fs from 'fs';
@@ -99,37 +100,36 @@ export class App extends cdk.App {
       actions: [source],
     });
 
-    this._debug('freezing the list of env vars to send to CodeBuild');
-    const environmentVariables = {
-      // propagate this machine's configuration into CodeBuild since Git
-      // metadata and other utilities are unavailable in that environment
-      ...config.toBuildEnvironmentMap(),
-      ...config.toBuildEnvironmentMap(spec.environmentVariables),
-      USER: { value: 'root' },
-      DEBUG: { value: 'mutato*' },
-      DEBUG_COLORS: { value: '0' },
-    };
-    this._debug('environment of CodeBuild: %o', environmentVariables);
-
+    let variables: { [key: string]: codeBuild.BuildEnvironmentVariable } = {};
     // explanation on WTF is going on here: if "bundle" isn't configured through
     // environment variables, that means user is executing mutato outside of the
     // CodeBuild environment. in that case, we capture mutato's source into .zip
     // and send it to CodeBuild as a CDK asset. CodeBuild won't re-run this code
     // since "config.opts.bundle" is defined for it.
-    let mutatoBundleBucket: s3.IBucket;
     if (!process.env.CODEBUILD_BUILD_ID) {
-      assert.ok(!config.opts.bundle.bucket && !config.opts.bundle.object);
       this._debug('running outside of CodeBuild, package up mutato');
-      const mutatoBundle = new s3Assets.Asset(pipelineStack, 'mutato-asset', {
-        exclude: _.concat('.git', 'mutato.yml', toGlob('.gitignore')),
+      assert.ok(!config.opts.bundle.bucket && !config.opts.bundle.object);
+      this._debug('freezing the list of env vars to send to CodeBuild');
+      const envFile = _.map(
+        {
+          ...config.toStringEnvironmentMap(),
+          ...spec.environmentVariables,
+          USER: 'root',
+          DEBUG: 'mutato*',
+          DEBUG_COLORS: '0',
+        },
+        (v, k) => `export ${k}=${v};`,
+      ).join('\n');
+      this._debug('variables env file: %s', envFile);
+      await fs.promises.writeFile('.env', envFile, { encoding: 'utf-8' });
+      assert.ok(fs.existsSync('.env'));
+      const bundle = new s3Assets.Asset(pipelineStack, __('mutato-asset'), {
+        exclude: _.concat('.git', 'mutato.yml', toGlob('.gitignore'), '!.env'),
         path: process.cwd(),
       });
-      mutatoBundleBucket = mutatoBundle.bucket;
-      _.set(environmentVariables, 'mutato_opts__bundle__bucket', {
-        value: mutatoBundle.s3BucketName,
-      });
-      _.set(environmentVariables, 'mutato_opts__bundle__object', {
-        value: mutatoBundle.s3ObjectKey,
+      variables = config.toBuildEnvironmentMap({
+        mutato_opts__bundle__bucket: bundle.s3BucketName,
+        mutato_opts__bundle__object: bundle.s3ObjectKey,
       });
     } else {
       // the first time user deploys through their terminal, this causes a loop
@@ -139,18 +139,23 @@ export class App extends cdk.App {
       assert.ok(config.opts.bundle.bucket && config.opts.bundle.object);
       const bundle = `s3://${config.opts.bundle.bucket}/${config.opts.bundle.object}`;
       this._debug('running inside CodeBuild, using mutato bundle: %s', bundle);
-      mutatoBundleBucket = s3.Bucket.fromBucketName(
+      // so that it is not destroyed when synth stage passes for the first time
+      s3.Bucket.fromBucketName(
         pipelineStack,
-        'mutato-bucket',
+        __('mutato-bucket'),
         config.opts.bundle.bucket,
       );
+      variables = config.toBuildEnvironmentMap({
+        mutato_opts__bundle__bucket: config.opts.bundle.bucket,
+        mutato_opts__bundle__object: config.opts.bundle.object,
+      });
     }
 
     this._debug('creating a CodeBuild project that synthesizes myself');
     const project = new codeBuild.PipelineProject(pipelineStack, 'build', {
       environment: {
         buildImage: codeBuild.LinuxBuildImage.fromDockerRegistry('node:lts'),
-        environmentVariables,
+        environmentVariables: variables,
       },
       buildSpec: codeBuild.BuildSpec.fromObject({
         version: 0.2,
@@ -170,6 +175,8 @@ export class App extends cdk.App {
               'mkdir -p /mutato && cd /mutato',
               'aws s3 cp "$MUTATO_BUNDLE" .',
               'unzip $(basename "$MUTATO_BUNDLE")',
+              // prepare the environment
+              'chmod +x .env && source .env && rm .env',
               // do cdk synth, mutato knows about user's repo over env vars
               'npm install && npm run synth',
               // show the user what changes they just pushed
@@ -181,8 +188,14 @@ export class App extends cdk.App {
       }),
     });
 
-    this._debug("granting permission to read from mutato bundle's bucket");
-    mutatoBundleBucket.grantRead(project);
+    // band-aid for admin permission issues during deploy. FIXME
+    this._debug('granting admin permission to the synthesize build stage');
+    project.addToRolePolicy(
+      new iam.PolicyStatement({
+        resources: ['*'],
+        actions: ['*'],
+      }),
+    );
 
     this._debug('creating an artifact to store synthesized self');
     const synthesizedApp = new codePipeline.Artifact();
