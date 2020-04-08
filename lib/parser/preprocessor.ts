@@ -65,7 +65,14 @@ export class PreProcessor {
       throwOnUndefined: true,
       watch: false,
     });
-    this.ctx = { ...context, build_time: Date.now() };
+    this.ctx = {
+      ...context,
+      build_time: Date.now(),
+      git: {
+        ...config.getGithubMetaData(),
+        commit: config.opts.git.commit,
+      },
+    };
     _debug('a new preprocessor is initialized with context: %o', this.ctx);
 
     this.env.addGlobal('env', (name: string) => {
