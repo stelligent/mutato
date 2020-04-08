@@ -1,11 +1,16 @@
+{% set productionBranch = "master" %}
+{% set imageTag = "latest" if git.branch == productionBranch else git.branch %}
+
 containers:
   - docker:
       name: mutato
       file: Dockerfile
-      uri: stelligent/mutato
+      uri: stelligent/mutato:{{ imageTag }}
       events:
         pre-build: npm-test
+{% if git.branch == productionBranch %}
         post-build: npm-deploy
+{% endif %}
 
 actions:
   - docker:
@@ -15,6 +20,7 @@ actions:
         - npm install --allow-root --unsafe-perm
         - USER=root npm test
 
+{% if git.branch == productionBranch %}
   - docker:
       name: npm-deploy
       container: node:lts
@@ -23,3 +29,4 @@ actions:
         - npm run build
         - echo //registry.npmjs.org/:_authToken={{ env("NPM_TOKEN") }} > .npmrc
         - npm publish --access=public
+{% endif %}
