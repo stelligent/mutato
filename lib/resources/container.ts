@@ -4,6 +4,8 @@ import * as assert from 'assert';
 import debug from 'debug';
 import _ from 'lodash';
 import { config } from '../config';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const dockerImageParse = require('docker-parse-image');
 
 interface ContainerProps {
   /** build time parameters passed to "docker build" */
@@ -14,12 +16,8 @@ interface ContainerProps {
   context?: string;
   /** image's push URI. leave empty if using AWS ECR */
   uri?: string;
-}
-
-interface ContainerRunProps {
-  args?: string;
-  env?: { [key: string]: string };
-  cmd: string;
+  /** optional array of tags to apply if we are building the container */
+  tags?: string[];
 }
 
 /**
@@ -31,7 +29,7 @@ export class Container extends cdk.Construct {
   public readonly needsBuilding: boolean;
   public readonly repo?: ecr.Repository;
   private readonly _debug: debug.Debugger;
-  private readonly _repositoryName: string;
+  private readonly _ecrRepoName?: string;
 
   /**
    * @hideconstructor
@@ -48,31 +46,39 @@ export class Container extends cdk.Construct {
       context: '.',
       file: '',
       uri: '',
+      tags: [],
     });
 
     this._debug('creating a container construct with props: %o', this.props);
     assert.ok(this.props.context);
     assert.ok(_.isString(this.props.uri));
 
-    // by default, repositoryName is the same as URI passed in
-    this._repositoryName = this.props.uri as string;
-
-    if (this.props.file && !this.props.uri) {
-      this._debug('container is building for AWS ECR');
-      const git = config.getGithubMetaData();
-      this._repositoryName = `mutato/${git.identifier}`;
-      this.repo = new ecr.Repository(this, 'repository', {
-        removalPolicy: cdk.RemovalPolicy.DESTROY,
-        repositoryName: this._repositoryName,
-      });
-      const uri = this.repo.repositoryUri;
-      this._debug('overriding container uri to: %s', uri);
-      this.props.uri = uri;
+    if (this.props.file) {
+      if (this.props.uri) {
+        this._debug('container is building for Docker Hub');
+        assert.ok(config.opts.docker.user && config.opts.docker.pass);
+        const { tag } = dockerImageParse(this.props.uri);
+        // if a tag is given in the URI, remove it and add it to "tags"
+        if (tag) this.props.tags?.push(tag);
+        this.props.uri = this.props.uri?.replace(`:${tag}`, '');
+      } else {
+        this._debug('container is building for AWS ECR');
+        const git = config.getGithubMetaData();
+        this._ecrRepoName = `mutato/${git.identifier}`;
+        this.repo = new ecr.Repository(this, 'repository', {
+          removalPolicy: cdk.RemovalPolicy.DESTROY,
+          repositoryName: this._ecrRepoName,
+        });
+        const uri = this.repo.repositoryUri;
+        this._debug('overriding container uri to: %s', uri);
+        this.props.uri = uri;
+      }
     }
 
     assert.ok(this.props.uri);
-    assert.ok(this._repositoryName);
-    this._debug('uri: %s, name: %s', this.props.uri, this._repositoryName);
+    if (_.isEmpty(this.props.tags)) this.props.tags = ['latest'];
+    this.props.tags?.push('$mutato_opts__git__commit');
+    this._debug('uri: %s, tags: %o', this.props.uri, this._tags);
     this.needsBuilding = !!this.props.file;
   }
 
@@ -90,7 +96,7 @@ export class Container extends cdk.Construct {
       // errors thrown by CloudFormation. the build order is guaranteed so this
       // is safe here.
       const stack = cdk.Stack.of(caller);
-      const uri = `${stack.account}.dkr.ecr.${stack.region}.${stack.urlSuffix}/${this._repositoryName}`;
+      const uri = `${stack.account}.dkr.ecr.${stack.region}.${stack.urlSuffix}/${this._ecrRepoName}`;
       return uri;
     } else return this.props.uri as string;
   }
@@ -113,18 +119,20 @@ export class Container extends cdk.Construct {
       (accumulate, value, key) => `${accumulate} --build-arg ${key}="${value}"`,
       '',
     ).trim();
-    const f = this.props.file;
-    const t = this.getImageUri();
-    const commitTag = `${t}:$mutato_opts__git__commit`;
-    const ctx = this.props.context;
-    return `docker build ${buildArgs} -t ${t} -t ${commitTag} -f ${f} ${ctx}`;
+    const file = this.props.file;
+    const context = this.props.context;
+    const tagArgs = this._tags.map((tag) => `-t ${tag}`).join(' ');
+    return `docker build ${buildArgs} ${tagArgs} -f ${file} ${context}`;
   }
 
   /** @returns shell command containing "docker push" */
   get pushCommand(): string {
     assert.ok(this.needsBuilding, 'container is not part of the pipeline');
-    const t = this.getImageUri();
-    const commitTag = `${t}:$mutato_opts__git__commit`;
-    return `docker push ${t} && docker push ${commitTag}`;
+    return this._tags.map((tag) => `docker push ${tag}`).join(' && ');
+  }
+
+  private get _tags(): string[] {
+    const imageUri = this.getImageUri();
+    return _.uniq(this.props.tags).map((tag) => `${imageUri}:${tag}`);
   }
 }

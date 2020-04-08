@@ -3,7 +3,6 @@ import * as cdk from '@aws-cdk/core';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { Container } from '../lib/resources/container';
-import { config } from '../lib';
 
 chai.use(chaiAsPromised);
 
@@ -33,7 +32,7 @@ describe('Container Construct Tests', () => {
       chai
         .expect(construct.buildCommand)
         .to.be.equal(
-          `docker build  -t stelligent/mutato -t stelligent/mutato:$mutato_opts__git__commit -f Dockerfile .`,
+          `docker build  -t stelligent/mutato:latest -t stelligent/mutato:$mutato_opts__git__commit -f Dockerfile .`,
         );
       const construct2 = new Container(stack, 'MyTestContainer2', {
         buildArgs: {
@@ -47,7 +46,7 @@ describe('Container Construct Tests', () => {
       chai
         .expect(construct2.buildCommand)
         .to.be.equal(
-          `docker build --build-arg key1="val1" --build-arg key2="val2" -t stelligent/mutato -t stelligent/mutato:$mutato_opts__git__commit -f Dockerfile2 Context2`,
+          `docker build --build-arg key1="val1" --build-arg key2="val2" -t stelligent/mutato:latest -t stelligent/mutato:$mutato_opts__git__commit -f Dockerfile2 Context2`,
         );
     });
 
@@ -63,7 +62,7 @@ describe('Container Construct Tests', () => {
       chai
         .expect(construct.pushCommand)
         .to.be.equal(
-          `docker push ${uri} && docker push ${uri}:$mutato_opts__git__commit`,
+          `docker push ${uri}:latest && docker push ${uri}:$mutato_opts__git__commit`,
         );
     });
   });
@@ -91,7 +90,7 @@ describe('Container Construct Tests', () => {
       chai
         .expect(construct.buildCommand)
         .to.be.equal(
-          `docker build  -t ${uri1} -t ${uri1}:$mutato_opts__git__commit -f Dockerfile .`,
+          `docker build  -t ${uri1}:latest -t ${uri1}:$mutato_opts__git__commit -f Dockerfile .`,
         );
       const construct2 = new Container(stack, 'MyTestContainer2', {
         buildArgs: {
@@ -105,7 +104,7 @@ describe('Container Construct Tests', () => {
       chai
         .expect(construct2.buildCommand)
         .to.be.equal(
-          `docker build --build-arg key1="val1" --build-arg key2="val2" -t ${uri2} -t ${uri2}:$mutato_opts__git__commit -f Dockerfile2 Context2`,
+          `docker build --build-arg key1="val1" --build-arg key2="val2" -t ${uri2}:latest -t ${uri2}:$mutato_opts__git__commit -f Dockerfile2 Context2`,
         );
     });
 
@@ -120,7 +119,7 @@ describe('Container Construct Tests', () => {
       chai
         .expect(construct.pushCommand)
         .to.be.equal(
-          `docker push ${uri} && docker push ${uri}:$mutato_opts__git__commit`,
+          `docker push ${uri}:latest && docker push ${uri}:$mutato_opts__git__commit`,
         );
     });
   });
