@@ -78,27 +78,38 @@ export class Container extends cdk.Construct {
     assert.ok(this.props.uri);
     if (_.isEmpty(this.props.tags)) this.props.tags = ['latest'];
     this.props.tags?.push('$mutato_opts__git__commit');
-    this._debug('uri: %s, tags: %o', this.props.uri, this._tags);
     this.needsBuilding = !!this.props.file;
+    this._debug('uri: %s, tags: %o', this.getImageUri(this), this._tags);
   }
 
   /**
    * @param caller optional construct in a different stack needing to access the
    * image URI without referencing the stack that is building the container.
+   * @param latest whether we should return the image with its latest GIT tag.
    * @returns Get the container image's URI for use in ECS. Optionally caller
    * can be used to get a portable URI independent of the stack building this
    * container with a precondition that caller exists in the same AWS region and
    * account.
    */
-  getImageUri(caller?: cdk.Construct): string {
+  getImageUri(caller?: cdk.Construct, latest = false): string {
+    const tag = latest ? `:${config.opts.git.commit}` : '';
     if (caller && this.repo) {
       // little hack so we can use this container cross-stacks without circular
       // errors thrown by CloudFormation. the build order is guaranteed so this
       // is safe here.
       const stack = cdk.Stack.of(caller);
-      const uri = `${stack.account}.dkr.ecr.${stack.region}.${stack.urlSuffix}/${this._ecrRepoName}`;
+      const suffix = stack.urlSuffix;
+      const region = stack.region;
+      const account = stack.account;
+      const repo = this._ecrRepoName;
+      const uri = `${account}.dkr.ecr.${region}.${suffix}/${repo}${tag}`;
       return uri;
-    } else return this.props.uri as string;
+    } else
+      return this.needsBuilding
+        ? // Docker Hub images we are building
+          `${this.props.uri}${tag}`
+        : // Off the shelf images
+          (this.props.uri as string);
   }
 
   /** @returns shell command containing "docker login" */

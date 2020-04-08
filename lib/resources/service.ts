@@ -68,7 +68,7 @@ export class Service extends cdk.Construct {
     assert.ok(_.isObject(this.props.container));
     assert.ok(_.isObject(this.props.network));
 
-    const imageUri = this.props.container.getImageUri(this);
+    const imageUri = this.props.container.getImageUri(this, true /* latest */);
     // a unique container to force an ECS cluster update to pull down changes
     const containerName = `container-${config.opts.git.commit}-${Date.now()}`;
     const ecrPullPolicy = new iam.PolicyStatement({

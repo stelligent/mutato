@@ -59,7 +59,10 @@ export class CodeBuild implements ActionInterface {
                   this._props.container.repo,
                 )
               : codeBuild.LinuxBuildImage.fromDockerRegistry(
-                  this._props.container?.getImageUri(),
+                  this._props.container?.getImageUri(
+                    this._props.pipeline,
+                    true /* latest */,
+                  ),
                 )
             : undefined,
           privileged: this._props.privileged,
