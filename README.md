@@ -16,3 +16,7 @@ deploy and automate micro-service deployments.
 - Documentation: [stelligent.github.io/mutato](https://stelligent.github.io/mutato)
 - Contributions: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Issues & Bugs: [Github Issues](https://github.com/stelligent/mutato/issues)
+- Active Development: [Github Project](https://github.com/stelligent/mutato/projects/3)
+- Roadmap: [Github Project](https://github.com/stelligent/mutato/projects/2)
+- CDK Roadmap: [Github Project](https://github.com/orgs/aws/projects/7)
+  - [Watching RFC 49](https://github.com/aws/aws-cdk-rfcs/blob/master/text/0049-continuous-delivery.md)
