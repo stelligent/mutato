@@ -14,7 +14,7 @@
   "settings": {
     "terminal.integrated.shell.linux": "/bin/bash"
   },
-
+  "runArgs": ["--env-file","mutato.env"],
   // Specifies a command that should be run after the container has been created.
   "postCreateCommand": "npm install",
 

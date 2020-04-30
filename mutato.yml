@@ -1,32 +1,10 @@
-{% set productionBranch = "master" %}
-{% set imageTag = "latest" if git.branch == productionBranch else git.branch %}
-
-containers:
-  - docker:
-      name: mutato
-      file: Dockerfile
-      uri: stelligent/mutato:{{ imageTag }}
-      events:
-        pre-build: npm-test
-{% if git.branch == productionBranch %}
-        post-build: npm-deploy
-{% endif %}
-
-actions:
-  - docker:
-      name: npm-test
-      container: node:lts
-      cmd:
-        - npm install --allow-root --unsafe-perm
-        - USER=root npm test
-
-{% if git.branch == productionBranch %}
-  - docker:
-      name: npm-deploy
-      container: node:lts
-      cmd:
-        - npm install --allow-root --unsafe-perm
-        - npm run build
-        - echo //registry.npmjs.org/:_authToken={{ env("NPM_TOKEN") }} > .npmrc
-        - npm publish --access=public
-{% endif %}
+environments:
+  - acceptance
+  - production
+resources:
+  - service:
+      provider: fargate
+      container: nginx:latest
+  - network:
+      vpc:
+        maxAZs: {{ 1 if environment == "acceptance" else 3 }}

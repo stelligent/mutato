@@ -21,7 +21,7 @@ describe('Container Construct Tests', () => {
       chai.assert.equal(construct.props.uri, 'stelligent/mutato');
     });
 
-    it('should ba able to generate a build command with a tag', () => {
+    it('should be able to generate a build command with a tag', () => {
       const app = new cdk.App();
       const stack = new cdk.Stack(app, 'MyTestStack');
       const construct = new Container(stack, 'MyTestContainer', {
@@ -50,7 +50,7 @@ describe('Container Construct Tests', () => {
         );
     });
 
-    it('should ba able to generate a push command without a tag', () => {
+    it('should be able to generate a push command without a tag', () => {
       const app = new cdk.App();
       const stack = new cdk.Stack(app, 'MyTestStack');
       const construct = new Container(stack, 'MyTestContainer', {
@@ -79,7 +79,7 @@ describe('Container Construct Tests', () => {
         .to(cdkAssert.haveResource('AWS::ECR::Repository'));
     });
 
-    it('should ba able to generate a build command without a tag', () => {
+    it('should be able to generate a build command without a tag', () => {
       const app = new cdk.App();
       const stack = new cdk.Stack(app, 'MyTestStack');
       const construct = new Container(stack, 'MyTestContainer', {
@@ -108,7 +108,7 @@ describe('Container Construct Tests', () => {
         );
     });
 
-    it('should ba able to generate a push command without a tag', () => {
+    it('should be able to generate a push command without a tag', () => {
       const app = new cdk.App();
       const stack = new cdk.Stack(app, 'MyTestStack');
       const construct = new Container(stack, 'MyTestContainer', {
