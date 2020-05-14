@@ -1,5 +1,5 @@
 export class InvalidMutatoYamlObjectError extends Error {
-  constructor(spec: any) {
+  constructor(spec: unknown) {
     super();
     Object.setPrototypeOf(this, InvalidMutatoYamlObjectError.prototype);
     this.message = `Type of ${typeof spec} is not a valid Mutato YAML object.`;
