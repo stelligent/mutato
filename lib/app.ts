@@ -31,7 +31,8 @@ export class App extends cdk.App {
   private readonly _parser = new Parser();
   private readonly _debug = debug('mutato:App');
   private static MUTATO_YML = path.resolve(config.opts.git.local, 'mutato.yml');
-
+  public pipelineStack: cdk.Stack;
+  public envStack: cdk.Stack;
   /**
    * initializes this Mutato App from a valid Mutato YAML file
    *
@@ -74,15 +75,19 @@ export class App extends cdk.App {
     };
 
     this._debug('creating a stack (Mutato Pipeline)');
-    const pipelineStack = new cdk.Stack(this, 'MutatoPipeline', {
+    this.pipelineStack = new cdk.Stack(this, 'MutatoPipeline', {
       description: 'pipeline that manages deploy of mutato.yml resources',
       stackName: __('Mutato-Pipeline'),
     });
 
     this._debug('creating a CodePipeline to manage Mutato resources');
-    const pipeline = new codePipeline.Pipeline(pipelineStack, __('pipeline'), {
-      restartExecutionOnUpdate: true,
-    });
+    const pipeline = new codePipeline.Pipeline(
+      this.pipelineStack,
+      __('pipeline'),
+      {
+        restartExecutionOnUpdate: true,
+      },
+    );
 
     const actionSources = SynthesizeHelpers.createMutatoCodePipelineSourceAction(
       this._debug,
@@ -123,10 +128,19 @@ export class App extends cdk.App {
       if (!fs.existsSync(generatedEnvPath)) {
         throw new Errors.EnvFileDoesNotExistError();
       }
-      const bundle = new s3Assets.Asset(pipelineStack, __('mutato-asset'), {
-        exclude: _.concat('.git', 'mutato.yml', toGlob('.gitignore'), '!.env'),
-        path: process.cwd(),
-      });
+      const bundle = new s3Assets.Asset(
+        this.pipelineStack,
+        __('mutato-asset'),
+        {
+          exclude: _.concat(
+            '.git',
+            'mutato.yml',
+            toGlob('.gitignore'),
+            '!.env',
+          ),
+          path: process.cwd(),
+        },
+      );
       variables = config.toBuildEnvironmentMap({
         mutato_opts__bundle__bucket: bundle.s3BucketName,
         mutato_opts__bundle__object: bundle.s3ObjectKey,
@@ -143,7 +157,7 @@ export class App extends cdk.App {
       this._debug('running inside CodeBuild, using mutato bundle: %s', bundle);
       // so that it is not destroyed when synth stage passes for the first time
       s3.Bucket.fromBucketName(
-        pipelineStack,
+        this.pipelineStack,
         __('mutato-bucket'),
         config.opts.bundle.bucket,
       );
@@ -156,7 +170,7 @@ export class App extends cdk.App {
     const project = SynthesizeHelpers.createMutatoCodeBuildProject(
       this._debug,
       variables,
-      pipelineStack,
+      this.pipelineStack,
     );
 
     this._debug('creating an artifact to store synthesized self');
@@ -183,7 +197,7 @@ export class App extends cdk.App {
       stageName: 'Mutato-Update',
       actions: [
         new cicd.PipelineDeployStackAction({
-          stack: pipelineStack,
+          stack: this.pipelineStack,
           input: synthesizedApp,
           adminPermissions: true,
         }),
@@ -201,7 +215,7 @@ export class App extends cdk.App {
 
       const prop = _.get(containerSpec, type);
       const name = _.get(prop, 'name', 'default');
-      const construct = new Container(pipelineStack, name, prop);
+      const construct = new Container(this.pipelineStack, name, prop);
       return construct;
     }) as Container[];
     const queryContainer = (
@@ -212,9 +226,13 @@ export class App extends cdk.App {
       const container = _.find(containers, (c) => c.node.id === nameOrUri);
       return container
         ? container
-        : new Container(pipelineStack, `volatile-${requester}-${nameOrUri}`, {
-            uri: nameOrUri,
-          });
+        : new Container(
+            this.pipelineStack,
+            `volatile-${requester}-${nameOrUri}`,
+            {
+              uri: nameOrUri,
+            },
+          );
     };
 
     const actionSpecs = spec.actions;
@@ -364,7 +382,7 @@ export class App extends cdk.App {
       this._debug('creating environment: %s / %o', envName, environment);
 
       this._debug('creating a stack (Mutato Resources)');
-      const envStack = new cdk.Stack(this, `MutatoResources-${envName}`, {
+      this.envStack = new cdk.Stack(this, `MutatoResources-${envName}`, {
         description: `application resources for environment: ${envName}`,
         stackName: __(`Mutato-App-${envName}`),
       });
@@ -375,16 +393,20 @@ export class App extends cdk.App {
       }
       const networkProp = _.head(networkSpecs);
       const networkName = `network-${envName}`;
-      const networkConstruct = new Network(envStack, networkName, networkProp);
+      const networkConstruct = new Network(
+        this.envStack,
+        networkName,
+        networkProp,
+      );
 
       const storages = queryConstruct('storage').map((props) => {
         const storageName = _.get(props, 'name', `storage-${envName}`);
-        return new Storage(envStack, storageName, props);
+        return new Storage(this.envStack, storageName, props);
       });
 
       const databases = queryConstruct('database').map((props) => {
         const databaseName = _.get(props, 'name', `database-${envName}`);
-        return new Database(envStack, databaseName, {
+        return new Database(this.envStack, databaseName, {
           ...props,
           network: networkConstruct,
         });
@@ -393,7 +415,7 @@ export class App extends cdk.App {
       queryConstruct('service').forEach((props) => {
         const serviceName = _.get(props, 'name', `service-${envName}`);
         const containerNameOrUri = _.get(props, 'container', 'default');
-        const service = new Service(envStack, serviceName, {
+        const service = new Service(this.envStack, serviceName, {
           ...props,
           network: networkConstruct,
           container: queryContainer(containerNameOrUri, serviceName),
@@ -407,7 +429,7 @@ export class App extends cdk.App {
         this._debug,
         pipeline,
         envName,
-        envStack,
+        this.envStack,
         synthesizedApp,
         actions,
       );
