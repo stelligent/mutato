@@ -1,8 +1,8 @@
-import * as codeBuild from '@aws-cdk/aws-codebuild';
-import * as iam from '@aws-cdk/aws-iam';
 import * as cicd from '@aws-cdk/app-delivery';
+import * as codeBuild from '@aws-cdk/aws-codebuild';
 import * as codePipeline from '@aws-cdk/aws-codepipeline';
 import * as codePipelineActions from '@aws-cdk/aws-codepipeline-actions';
+import * as iam from '@aws-cdk/aws-iam';
 import * as cdk from '@aws-cdk/core';
 import fs from 'fs';
 import _ from 'lodash';
@@ -10,6 +10,14 @@ import * as Actions from '../actions';
 import { config } from '../config';
 
 export class SynthesizeHelpers {
+  /**
+   * Creates a yaml string from a yaml file
+   *
+   * @param debug the debugger
+   * @param file the file path of the yaml file to open
+   *
+   * @returns the output of the yaml string created from a file
+   */
   public static async createYamlStringFromFile(
     debug: debug.Debugger,
     file: string,
@@ -19,6 +27,15 @@ export class SynthesizeHelpers {
     return yamlString;
   }
 
+  /**
+   * Adds a source action to the Mutato CodePipeline
+   *
+   * @param debug the debugger
+   * @param pipeline the codepipeline to add the source actions to
+   * @param git metadata about the git source
+   *
+   * @returns a Github codepipeline Artifact and Github codepipeline action
+   */
   public static createMutatoCodePipelineSourceAction(
     debug: debug.Debugger,
     pipeline: codePipeline.Pipeline,
@@ -47,7 +64,15 @@ export class SynthesizeHelpers {
     });
     return { githubSource, source };
   }
-
+  /**
+   * Adds a Codebuild project to the Mutato stack
+   *
+   * @param debug the debugger
+   * @param variables codebuild environment variables
+   * @param pipelineStack the cdk.Stack to add the codebuild project to
+   *
+   * @returns a codebuild pipeline project
+   */
   public static createMutatoCodeBuildProject(
     debug: debug.Debugger,
     variables: { [key: string]: codeBuild.BuildEnvironmentVariable },
@@ -106,13 +131,15 @@ export class SynthesizeHelpers {
   /**
    * Add the predeploy, deploy, and postdpeloy stages to a Mutato CodePipeline
    *
-   * @param environment
-   * @param debug
-   * @param pipeline
-   * @param envName
-   * @param envStack
-   * @param synthesizedApp
-   * @param actions
+   * @param environment the environment to fetch the events from
+   * @param debug the debugger
+   * @param pipeline the pipeline to add the deploy stage to
+   * @param envName the name of the environment
+   * @param envStack the environment stack to deploy from the synthesized CDK
+   * template
+   * @param synthesizedApp the synthesized app template created as a
+   * codepipeline artifact
+   * @param actions codebuild or approval action
    */
   public static addMutatoPipelineDeployStages(
     environment: object | undefined,
@@ -163,13 +190,13 @@ export class SynthesizeHelpers {
   }
 
   /**
-   * @param environment
-   * @param event
-   * @param pipeline
-   * @param stageName
-   * @param actionName
-   * @param deployStage
-   * @param actions
+   * @param environment the environment to fetch the events from
+   * @param event the event to fetch from the environment
+   * @param pipeline the pipeline to add the pre/post deploy stage to
+   * @param stageName the name of the pre/post deploystage
+   * @param actionName the name of the codepipeline pre/post deploy action
+   * @param deployStage the stage to play the pre/post deploy stage after
+   * @param actions the list of actions for the pipeline
    */
   public static addPrePostDeployStage(
     environment: object | undefined,

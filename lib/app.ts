@@ -32,7 +32,7 @@ export class App extends cdk.App {
   private readonly _debug = debug('mutato:App');
   private static MUTATO_YML = path.resolve(config.opts.git.local, 'mutato.yml');
   public pipelineStack: cdk.Stack;
-  public envStack: cdk.Stack;
+  public envStacks: cdk.Stack[] = [];
   /**
    * initializes this Mutato App from a valid Mutato YAML file
    *
@@ -382,31 +382,27 @@ export class App extends cdk.App {
       this._debug('creating environment: %s / %o', envName, environment);
 
       this._debug('creating a stack (Mutato Resources)');
-      this.envStack = new cdk.Stack(this, `MutatoResources-${envName}`, {
+      const envStack = new cdk.Stack(this, `MutatoResources-${envName}`, {
         description: `application resources for environment: ${envName}`,
         stackName: __(`Mutato-App-${envName}`),
       });
-
+      this.envStacks.push(envStack);
       const networkSpecs = queryConstruct('network');
       if (networkSpecs.length > 1) {
         throw new Errors.TooManyNetworkSpecs();
       }
       const networkProp = _.head(networkSpecs);
       const networkName = `network-${envName}`;
-      const networkConstruct = new Network(
-        this.envStack,
-        networkName,
-        networkProp,
-      );
+      const networkConstruct = new Network(envStack, networkName, networkProp);
 
       const storages = queryConstruct('storage').map((props) => {
         const storageName = _.get(props, 'name', `storage-${envName}`);
-        return new Storage(this.envStack, storageName, props);
+        return new Storage(envStack, storageName, props);
       });
 
       const databases = queryConstruct('database').map((props) => {
         const databaseName = _.get(props, 'name', `database-${envName}`);
-        return new Database(this.envStack, databaseName, {
+        return new Database(envStack, databaseName, {
           ...props,
           network: networkConstruct,
         });
@@ -415,7 +411,7 @@ export class App extends cdk.App {
       queryConstruct('service').forEach((props) => {
         const serviceName = _.get(props, 'name', `service-${envName}`);
         const containerNameOrUri = _.get(props, 'container', 'default');
-        const service = new Service(this.envStack, serviceName, {
+        const service = new Service(envStack, serviceName, {
           ...props,
           network: networkConstruct,
           container: queryContainer(containerNameOrUri, serviceName),
@@ -429,7 +425,7 @@ export class App extends cdk.App {
         this._debug,
         pipeline,
         envName,
-        this.envStack,
+        envStack,
         synthesizedApp,
         actions,
       );
