@@ -59,6 +59,8 @@ describe('Parser Tests', () => {
 
   it('should support env() and cmd() in environments', () => {
     const parser = new Parser();
+    /** Uses */
+    process.env.USER = 'node';
     const parsed = parser.parse(`
     environments:
       - acceptance:
