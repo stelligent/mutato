@@ -96,7 +96,7 @@
     "debug": "^4.1.1",
     "docker-parse-image": "^3.0.1",
     "gitignore-globs": "^0.1.1",
-    "lodash": "^4.17.19",
+    "lodash": "^4.17.21",
     "ms": "^2.1.2",
     "nunjucks": "^3.2.1",
     "parse-github-url": "^1.0.2",
